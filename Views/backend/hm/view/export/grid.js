@@ -85,6 +85,22 @@ Ext.define('Shopware.apps.Hm.view.export.Grid', {
                 menuDisabled: true,
                 sortable: false,
                 flex: 1
+            },
+            {
+                xtype: 'actioncolumn',
+                text: '',
+                menuDisabled: true,
+                width: 20,
+                items: [
+                    {
+                        iconCls: 'sprite-lightning',
+                        tooltip: '{s name=view/export/grid/column/options/open_link_title}Open link in browser{/s}',
+                        handler: function(grid, rowIndex) {
+                            var record = grid.getStore().getAt(rowIndex);
+                            window.open(record.get('uri'));
+                        }
+                    }
+                ]
             }
         ];
     },

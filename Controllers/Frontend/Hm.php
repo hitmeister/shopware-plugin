@@ -83,16 +83,23 @@ class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
             $this->Response()->setHeader('Content-Type', 'text/plain;charset=utf-8');
         }
 
-        // Flush before
-        if ($this->Request()->getParam('force')) {
-            $this->getExporter()->flushCache();
+        $id = $this->Request()->getParam('id');
+        if (!$id) {
+            $id = 'all';
         }
 
-        $feedFile = $this->getExporter()->getFeed();
+        // Flush before
+        if ($this->Request()->getParam('force')) {
+            $this->getExporter()->flushCache($id);
+        }
+
+        $feedFile = $this->getExporter()->getFeed($id);
         if (!$feedFile) {
             $this->Response()->clearHeaders()->setHttpResponseCode(204);
             return;
         }
+
+        $this->Response()->setHeader('Content-Disposition', sprintf('attachment; filename="%s"', basename($feedFile)));
 
         $this->Response()->sendHeaders();
         readfile($feedFile);

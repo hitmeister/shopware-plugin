@@ -33,15 +33,12 @@ class Shopware_Controllers_Backend_HmExports extends Shopware_Controllers_Backen
                 'module' => 'frontend',
                 'controller' => 'hm',
                 'action' => 'export',
+                'id' => date('YmdHis'),
             ));
 
         try {
             $id = $this->getApiClient()->importFiles()->post($callback, Constants::TYPE_PRODUCT_FEED);
             $res = !empty($id);
-
-            if ($res) {
-                $this->getExporter()->flushCache();
-            }
 
             $this->View()->assign(array('success' => $res));
         } catch (Exception $e) {
@@ -55,13 +52,5 @@ class Shopware_Controllers_Backend_HmExports extends Shopware_Controllers_Backen
     private function getApiClient()
     {
         return $this->get('HmApi');
-    }
-
-    /**
-     * @return Exporter
-     */
-    private function getExporter()
-    {
-        return $this->get('HmExporter');
     }
 }
