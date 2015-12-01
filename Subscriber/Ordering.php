@@ -10,22 +10,33 @@ use Shopware\Models\Order\Order;
 
 class Ordering implements SubscriberInterface
 {
+    /** @var string */
+    private $carrierCode;
+
+    /**
+     * Ordering constructor.
+     * @param string $carrierCode
+     */
+    public function __construct($carrierCode)
+    {
+        $this->carrierCode = $carrierCode;
+    }
+
     /**
      * {@inheritDoc}
      */
     public static function getSubscribedEvents()
     {
         return array(
-            'Shopware\Models\Order\Detail::postUpdate' => 'onDetailsStatusUpdate',
-            'Shopware\Models\Order\Detail::preRemove' => 'onDetailsStatusUpdate',
-            'Shopware\Models\Order\Order::postUpdate' => 'onStatusUpdate',
+            'Shopware\Models\Order\Detail::postUpdate' => 'onDetailsUpdate',
+            'Shopware\Models\Order\Order::postUpdate' => 'onOrderUpdate',
         );
     }
 
     /**
      * @param \Enlight_Event_EventArgs $args
      */
-    public function onDetailsStatusUpdate(\Enlight_Event_EventArgs $args)
+    public function onDetailsUpdate(\Enlight_Event_EventArgs $args)
     {
         /** @var Detail $detail */
         $detail = $args->get('entity');
@@ -43,7 +54,7 @@ class Ordering implements SubscriberInterface
     /**
      * @param \Enlight_Event_EventArgs $args
      */
-    public function onStatusUpdate(\Enlight_Event_EventArgs $args)
+    public function onOrderUpdate(\Enlight_Event_EventArgs $args)
     {
         /** @var Order $order */
         $order = $args->get('entity');
@@ -58,6 +69,16 @@ class Ordering implements SubscriberInterface
                 /** @var Detail $detail */
                 if ('canceled' != $detail->getAttribute()->getHmStatus()) {
                     $this->cancelOrderDetails($detail);
+                }
+            }
+        }
+
+        // shipping
+        if ($order->getTrackingCode()) {
+            foreach ($order->getDetails() as $detail) {
+                /** @var Detail $detail */
+                if (!in_array($detail->getAttribute()->getHmStatus(), array('canceled', 'sent'))) {
+                    $this->sendOrderDetails($detail, $order->getTrackingCode());
                 }
             }
         }
@@ -79,6 +100,27 @@ class Ordering implements SubscriberInterface
             Shopware()->Db()->executeUpdate(
                 'UPDATE s_order_details_attributes SET hm_status = ? WHERE detailID = ?',
                 array('canceled', $detail->getId())
+            );
+        } catch (\Exception $e) {}
+    }
+
+    /**
+     * @param Detail $detail
+     * @param $trackingCode
+     * @throws \Exception
+     */
+    private function sendOrderDetails(Detail $detail, $trackingCode)
+    {
+        /** @var Client $api */
+        $api = Shopware()->Container()->get('HmApi');
+
+        try {
+            $api->orderUnits()
+                ->send($detail->getAttribute()->getHmOrderUnitId(), $this->carrierCode, $trackingCode);
+
+            Shopware()->Db()->executeUpdate(
+                'UPDATE s_order_details_attributes SET hm_status = ? WHERE detailID = ?',
+                array('sent', $detail->getId())
             );
         } catch (\Exception $e) {}
     }

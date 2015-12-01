@@ -104,7 +104,7 @@ class Shopware_Plugins_Backend_HmMarketplace_Bootstrap extends Shopware_Componen
             new ControllerPath($path),
             new Resources($this->Config()),
             new Stock(),
-            new Ordering(),
+            new Ordering($this->Config()->get('defaultCarrier')),
         );
 
         /** @var $subject \Enlight_Controller_Action */
@@ -166,6 +166,10 @@ class Shopware_Plugins_Backend_HmMarketplace_Bootstrap extends Shopware_Componen
                 ),
                 'defaultShop' => array(
                     'label' => 'Orders: Default shop',
+                    'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+                ),
+                'defaultCarrier' => array(
+                    'label' => 'Shipping: Default carrier',
                     'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
                 ),
             )

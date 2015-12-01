@@ -119,6 +119,40 @@ class Form
             'value' => !empty($shops) ? $shops[0][0] : '',
             'store' => $shops,
         ));
+
+        // Delivery
+        $this->form->setElement('select', 'defaultCarrier', array(
+            'label' => 'Shipping: Default carrier',
+            'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+            'value' => Constants::CARRIER_CODE_DHL,
+            'required' => true,
+            'store' => array(
+                array(Constants::CARRIER_CODE_OTHER, Constants::CARRIER_CODE_OTHER),
+                array(Constants::CARRIER_CODE_COMPUTERUNIVERSE, Constants::CARRIER_CODE_COMPUTERUNIVERSE),
+                array(Constants::CARRIER_CODE_DHL, Constants::CARRIER_CODE_DHL),
+                array(Constants::CARRIER_CODE_DHL_2_MH, Constants::CARRIER_CODE_DHL_2_MH),
+                array(Constants::CARRIER_CODE_DHL_FREIGHT, Constants::CARRIER_CODE_DHL_FREIGHT),
+                array(Constants::CARRIER_CODE_DTL, Constants::CARRIER_CODE_DTL),
+                array(Constants::CARRIER_CODE_DPD, Constants::CARRIER_CODE_DPD),
+                array(Constants::CARRIER_CODE_DEUTSCHE_POST, Constants::CARRIER_CODE_DEUTSCHE_POST),
+                array(Constants::CARRIER_CODE_DACHSER, Constants::CARRIER_CODE_DACHSER),
+                array(Constants::CARRIER_CODE_EMONS, Constants::CARRIER_CODE_EMONS),
+                array(Constants::CARRIER_CODE_FEDEX, Constants::CARRIER_CODE_FEDEX),
+                array(Constants::CARRIER_CODE_GLS, Constants::CARRIER_CODE_GLS),
+                array(Constants::CARRIER_CODE_GEL, Constants::CARRIER_CODE_GEL),
+                array(Constants::CARRIER_CODE_HERMES, Constants::CARRIER_CODE_HERMES),
+                array(Constants::CARRIER_CODE_HERMES_2_MH, Constants::CARRIER_CODE_HERMES_2_MH),
+                array(Constants::CARRIER_CODE_HELLMANN, Constants::CARRIER_CODE_HELLMANN),
+                array(Constants::CARRIER_CODE_ILOXX, Constants::CARRIER_CODE_ILOXX),
+                array(Constants::CARRIER_CODE_KUEHNE_NAGEL, Constants::CARRIER_CODE_KUEHNE_NAGEL),
+                array(Constants::CARRIER_CODE_RHENUS, Constants::CARRIER_CODE_RHENUS),
+                array(Constants::CARRIER_CODE_SCHENKER, Constants::CARRIER_CODE_SCHENKER),
+                array(Constants::CARRIER_CODE_SPEDITION_GUETTLER, Constants::CARRIER_CODE_SPEDITION_GUETTLER),
+                array(Constants::CARRIER_CODE_TNT, Constants::CARRIER_CODE_TNT),
+                array(Constants::CARRIER_CODE_TRANS_O_FLEX, Constants::CARRIER_CODE_TRANS_O_FLEX),
+                array(Constants::CARRIER_CODE_UPS, Constants::CARRIER_CODE_UPS),
+            ),
+        ));
     }
 
     /**
