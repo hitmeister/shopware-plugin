@@ -6,6 +6,7 @@ use Enlight\Event\SubscriberInterface;
 use Hitmeister\Component\Api\ClientBuilder;
 use ShopwarePlugins\HmMarketplace\Components\CategoryFetcher;
 use ShopwarePlugins\HmMarketplace\Components\Exporter;
+use ShopwarePlugins\HmMarketplace\Components\Ordering;
 use ShopwarePlugins\HmMarketplace\Components\StockManagement;
 
 class Resources implements SubscriberInterface
@@ -30,6 +31,7 @@ class Resources implements SubscriberInterface
             'Enlight_Bootstrap_InitResource_HmCategoryFetcher' => 'onInitCategoryFetcher',
             'Enlight_Bootstrap_InitResource_HmStockManagement' => 'onInitStockManagement',
             'Enlight_Bootstrap_InitResource_HmExporter' => 'onInitExporter',
+            'Enlight_Bootstrap_InitResource_HmOrdering' => 'onInitOrdering',
         );
     }
 
@@ -84,6 +86,21 @@ class Resources implements SubscriberInterface
         return new Exporter(
             Shopware()->Container()->get('dbal_connection'),
             Shopware()->Container()->getParameter('kernel.cache_dir')
+        );
+    }
+
+    /**
+     * @return Ordering
+     * @throws \Exception
+     */
+    public function onInitOrdering()
+    {
+        return new Ordering(
+            Shopware()->Container()->get('dbal_connection'),
+            Shopware()->Container()->get('HmApi'),
+            $this->config->get('defaultDeliveryMethod'),
+            $this->config->get('defaultPaymentMethod'),
+            $this->config->get('defaultShop')
         );
     }
 }

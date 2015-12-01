@@ -91,6 +91,34 @@ class Form
                 array(Constants::CONDITION_USED_ACCEPTABLE, Constants::CONDITION_USED_ACCEPTABLE),
             ),
         ));
+
+        // Order
+        $deliveryMethods = Shopware()->Db()->fetchAll('SELECT id, name FROM s_premium_dispatch', array(), \PDO::FETCH_NUM);
+        $this->form->setElement('select', 'defaultDeliveryMethod', array(
+            'label' => 'Orders: Default delivery method',
+            'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+            'required' => true,
+            'value' => !empty($deliveryMethods) ? $deliveryMethods[0][0] : '',
+            'store' => $deliveryMethods,
+        ));
+
+        $paymentMethods = Shopware()->Db()->fetchAll('SELECT id, name FROM s_core_paymentmeans', array(), \PDO::FETCH_NUM);
+        $this->form->setElement('select', 'defaultPaymentMethod', array(
+            'label' => 'Orders: Default payment method',
+            'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+            'required' => true,
+            'value' => !empty($paymentMethods) ? $paymentMethods[0][0] : '',
+            'store' => $paymentMethods,
+        ));
+
+        $shops = Shopware()->Db()->fetchAll('SELECT id, name FROM s_core_shops', array(), \PDO::FETCH_NUM);
+        $this->form->setElement('select', 'defaultShop', array(
+            'label' => 'Orders: Default shop',
+            'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+            'required' => true,
+            'value' => !empty($shops) ? $shops[0][0] : '',
+            'store' => $shops,
+        ));
     }
 
     /**

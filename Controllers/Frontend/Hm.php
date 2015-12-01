@@ -2,6 +2,7 @@
 
 use Hitmeister\Component\Api\Transfers\Constants;
 use ShopwarePlugins\HmMarketplace\Components\Exporter;
+use ShopwarePlugins\HmMarketplace\Components\Ordering;
 
 class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
 {
@@ -46,11 +47,9 @@ class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
      */
     protected function processNotification()
     {
-        $messageId = $this->Request()->getParam('id_message');
+        //$messageId = $this->Request()->getParam('id_message');
         $resource = $this->Request()->getParam('resource');
         $eventName = $this->Request()->getParam('event_name');
-
-        $statusMsg = 'Undefined notification';
 
         switch($eventName) {
             case Constants::EVENT_NAME_ORDER_NEW:
@@ -61,16 +60,16 @@ class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
                 $resourceId = $matches[1];
 
                 try {
-                    //$this->getOrderService()->process($resourceId);
-                    $statusMsg = 'OK';
+                    $this->getOrderService()->process($resourceId);
                 } catch(Exception $e) {
                     $this->Response()->setHttpResponseCode(500);
-                    $statusMsg = $e->getMessage();
                 }
                 break;
 
             case Constants::EVENT_NAME_ORDER_UNIT_NEW:
-                $statusMsg = sprintf('Handled by %s notification', Constants::EVENT_NAME_ORDER_NEW);
+                break;
+
+            case Constants::EVENT_NAME_ORDER_UNIT_STATUS_CHANGED:
                 break;
         }
     }
@@ -90,10 +89,10 @@ class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
 
         // Flush before
         if ($this->Request()->getParam('force')) {
-            $this->getExporter()->flushCache($id);
+            $this->getExporterService()->flushCache($id);
         }
 
-        $feedFile = $this->getExporter()->getFeed($id);
+        $feedFile = $this->getExporterService()->getFeed($id);
         if (!$feedFile) {
             $this->Response()->clearHeaders()->setHttpResponseCode(204);
             return;
@@ -108,8 +107,16 @@ class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
     /**
      * @return Exporter
      */
-    private function getExporter()
+    private function getExporterService()
     {
         return $this->get('HmExporter');
+    }
+
+    /**
+     * @return Ordering
+     */
+    public function getOrderService()
+    {
+        return $this->get('HmOrdering');
     }
 }

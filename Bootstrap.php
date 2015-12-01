@@ -154,6 +154,18 @@ class Shopware_Plugins_Backend_HmMarketplace_Bootstrap extends Shopware_Componen
                     'label' => 'Stock: Default article condition',
                     'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
                 ),
+                'defaultDeliveryMethod' => array(
+                    'label' => 'Orders: Default delivery method',
+                    'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+                ),
+                'defaultPaymentMethod' => array(
+                    'label' => 'Orders: Default payment method',
+                    'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+                ),
+                'defaultShop' => array(
+                    'label' => 'Orders: Default shop',
+                    'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+                ),
             )
         );
 
