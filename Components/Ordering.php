@@ -5,6 +5,7 @@ namespace ShopwarePlugins\HmMarketplace\Components;
 use Doctrine\DBAL\Connection;
 use Hitmeister\Component\Api\Client;
 use Hitmeister\Component\Api\Transfers\AddressTransfer;
+use Hitmeister\Component\Api\Transfers\Constants;
 use Hitmeister\Component\Api\Transfers\OrderUnitTransfer;
 use Shopware\Models\Article\Article;
 use Shopware\Models\Article\Detail as ArticleDetail;
@@ -460,5 +461,42 @@ class Ordering
         $paymentInstanceModel->setAmount($orderModel->getInvoiceAmount());
 
         return $paymentInstanceModel;
+    }
+
+    /**
+     * @param $hmOrderUnitId
+     * @return bool
+     * @throws \Exception
+     */
+    public function cancelOrderUnit($hmOrderUnitId)
+    {
+        $ids = Shopware()->Db()->fetchRow(
+            'SELECT d.id, d.orderID FROM s_order_details_attributes a, s_order_details d WHERE a.detailID = d.id AND a.hm_order_unit_id = ?',
+            array($hmOrderUnitId)
+        );
+        if (empty($ids)) {
+            throw new \Exception('Order unit not found');
+        }
+
+        $hmOrderUnit = $this->apiClient->orderUnits()->get($hmOrderUnitId);
+        if (Constants::STATUS_CANCELLED != $hmOrderUnit->status) {
+            return false;
+        }
+
+        Shopware()->Db()->executeUpdate('UPDATE s_order_details_attributes SET hm_status = ? WHERE detailID = ?', array('canceled', $ids['id']));
+        Shopware()->Db()->executeUpdate('UPDATE s_order_details SET status = ? WHERE id = ?', array(2, $ids['id']));
+
+        // More items?
+        $count = (int)Shopware()->Db()->fetchOne(
+            'SELECT COUNT(d.id) FROM s_order_details d, s_order_details_attributes a WHERE a.detailID = d.id AND a.hm_status != ? AND d.orderID = ?',
+            array('canceled', $ids['orderID'])
+        );
+
+        // Cancel whole order
+        if (0 == $count) {
+            Shopware()->Db()->executeUpdate('UPDATE s_order SET status = ? WHERE id = ?', array(4, $ids['orderID']));
+        }
+
+        return true;
     }
 }

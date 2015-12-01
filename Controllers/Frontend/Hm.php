@@ -47,11 +47,10 @@ class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
      */
     protected function processNotification()
     {
-        //$messageId = $this->Request()->getParam('id_message');
         $resource = $this->Request()->getParam('resource');
         $eventName = $this->Request()->getParam('event_name');
 
-        switch($eventName) {
+        switch ($eventName) {
             case Constants::EVENT_NAME_ORDER_NEW:
                 if (!preg_match('~/orders/(.*)/~', $resource, $matches)) {
                     $this->Response()->setHttpResponseCode(400);
@@ -61,7 +60,7 @@ class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
 
                 try {
                     $this->getOrderService()->process($resourceId);
-                } catch(Exception $e) {
+                } catch (Exception $e) {
                     $this->Response()->setHttpResponseCode(500);
                 }
                 break;
@@ -70,6 +69,18 @@ class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
                 break;
 
             case Constants::EVENT_NAME_ORDER_UNIT_STATUS_CHANGED:
+                if (!preg_match('~/order-units/(.*)/~', $resource, $matches)) {
+                    $this->Response()->setHttpResponseCode(400);
+                    return;
+                }
+                $resourceId = $matches[1];
+
+                try {
+                    $this->getOrderService()->cancelOrderUnit($resourceId);
+                } catch (Exception $e) {
+                    $this->Response()->setHttpResponseCode(500);
+                }
+
                 break;
         }
     }

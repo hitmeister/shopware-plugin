@@ -82,5 +82,14 @@ class Attributes
             'varchar(20)',
             true
         );
+
+        Shopware()->Models()->addAttribute(
+            's_order_details_attributes',
+            'hm',
+            'status',
+            'varchar(20)',
+            false,
+            'new'
+        );
     }
 }

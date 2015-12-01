@@ -4,6 +4,7 @@ use ShopwarePlugins\HmMarketplace\Bootstrap\Attributes;
 use ShopwarePlugins\HmMarketplace\Bootstrap\Form;
 use ShopwarePlugins\HmMarketplace\Subscriber\Backend;
 use ShopwarePlugins\HmMarketplace\Subscriber\ControllerPath;
+use ShopwarePlugins\HmMarketplace\Subscriber\Ordering;
 use ShopwarePlugins\HmMarketplace\Subscriber\Resources;
 use ShopwarePlugins\HmMarketplace\Subscriber\Stock;
 
@@ -102,7 +103,8 @@ class Shopware_Plugins_Backend_HmMarketplace_Bootstrap extends Shopware_Componen
         $subscribers = array(
             new ControllerPath($path),
             new Resources($this->Config()),
-            new Stock()
+            new Stock(),
+            new Ordering(),
         );
 
         /** @var $subject \Enlight_Controller_Action */
