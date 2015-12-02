@@ -40,22 +40,19 @@ class Form
         $this->form->setElement('text', 'clientKey', array(
             'label' => 'API: Client key',
             'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
-            'value' => '51ffffffffffffffffffffffffffffff',
             'required' => true,
         ));
 
         $this->form->setElement('text', 'secretKey', array(
             'label' => 'API: Secret key',
             'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
-            'value' => '0000000000000000000000000000000000000000000000000000000000000000',
             'required' => true,
         ));
 
         $this->form->setElement('text', 'apiUrl', array(
             'label' => 'API: URL',
             'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
-            //'value' => 'https://www.hitmeister.de/api/v1/',
-            'value' => 'https://www.maksim-naumov.hitmeister.dev/api/v1/',
+            'value' => 'https://www.hitmeister.de/api/v1/',
             'required' => true,
         ));
 
