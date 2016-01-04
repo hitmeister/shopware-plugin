@@ -1,4 +1,4 @@
-//{namespace name=backend/hm/translation}
+//{namespace name=backend/hm/view/category}
 Ext.define('Shopware.apps.Hm.view.category.local.Tree', {
     extend: 'Ext.tree.Panel',
     alias: 'widget.hm-category-local-tree',
@@ -11,7 +11,7 @@ Ext.define('Shopware.apps.Hm.view.category.local.Tree', {
     },
 
     initComponent: function () {
-        var me = this, loading = me.setLoading(true);
+        var me = this;
 
         me.store = Ext.create('Ext.data.TreeStore', {
             model: 'Shopware.apps.Hm.model.local.Tree'
@@ -19,7 +19,7 @@ Ext.define('Shopware.apps.Hm.view.category.local.Tree', {
 
         me.columns = [{
             xtype: 'treecolumn',
-            text: '{s name=view/category/local/column_title}Local categories{/s}',
+            text: '{s name=hm/category/local/column/title}{/s}',
             sortable: false,
             menuDisabled: true,
             flex: 1,
@@ -33,17 +33,17 @@ Ext.define('Shopware.apps.Hm.view.category.local.Tree', {
             items: [
                 {
                     xtype: 'tbtext',
-                    text: '{s name=view/category/local/mapped_title}Mapped:{/s}'
+                    text: '{s name=hm/category/local/toolbar/mapped/title}{/s}'
                 },
                 {
                     xtype: 'tbtext',
-                    text: '{s name=view/category/local/mapped_to_none}none{/s}',
+                    text: '{s name=hm/category/local/toolbar/mapped/none}{/s}',
                     itemId: 'mappedTo'
                 },
                 '->',
                 {
                     xtype: 'button',
-                    text: '{s name=view/category/local/button_remove}Remove{/s}',
+                    text: '{s name=hm/category/local/toolbar/button/remove}Remove{/s}',
                     iconCls: 'sprite-minus-circle-frame',
                     disabled: true,
                     itemId: 'removeMap',
@@ -59,16 +59,16 @@ Ext.define('Shopware.apps.Hm.view.category.local.Tree', {
                             node.save({
                                 success: function() {
                                     b.setDisabled(true);
-                                    t.setText('{s name=view/category/local/mapped_to_none}none{/s}');
+                                    t.setText('{s name=hm/category/local/toolbar/mapped/none}{/s}');
                                     panel.getSelectionModel().deselectAll();
                                     panel.getSelectionModel().select(node)
                                 },
                                 failure: function() {
-                                    Ext.MessageBox.alert('Error','{s name=view/category/local/alert_remove_map}Error on remove map operation!{/s}');
+                                    Ext.MessageBox.alert('Error','{s name=hm/category/local/alert/error}{/s}');
                                 }
                             });
                         } else {
-                            Ext.MessageBox.alert('Error','{s name=view/category/local/alert_not_selected}Please, select item first!{/s}');
+                            Ext.MessageBox.alert('Error','{s name=hm/category/alert/not_selected}{/s}');
                         }
                     }
                 }
@@ -106,7 +106,7 @@ Ext.define('Shopware.apps.Hm.view.category.local.Tree', {
             t.setText(record.data.hm_category_title);
         } else {
             b.setDisabled(true);
-            t.setText('{s name=view/category/local/mapped_to_none}none{/s}')
+            t.setText('{s name=hm/category/local/toolbar/mapped/none}{/s}')
         }
     },
 

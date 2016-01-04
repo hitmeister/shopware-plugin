@@ -1,4 +1,4 @@
-//{namespace name=backend/hm/translation}
+//{namespace name=backend/hm/controller/category}
 Ext.define('Shopware.apps.Hm.controller.Category', {
     extend: 'Ext.app.Controller',
 
@@ -26,7 +26,7 @@ Ext.define('Shopware.apps.Hm.controller.Category', {
             b = panel.down('toolbar > button[itemId=removeMap]');
 
         if (!node) {
-            Ext.MessageBox.alert('Error','{s name=view/category/local/alert_not_selected}Please, select item first!{/s}');
+            Ext.MessageBox.alert('Error','{s name=hm/category/alert/not_selected}{/s}');
             return;
         }
 
@@ -41,7 +41,7 @@ Ext.define('Shopware.apps.Hm.controller.Category', {
                 panel.getSelectionModel().select(node)
             },
             failure: function() {
-                Ext.MessageBox.alert('Error','{s name=view/category/local/alert_add_map}Error on add map operation!{/s}');
+                Ext.MessageBox.alert('Error','{s name=hm/category/alert/add_map}{/s}');
             }
         });
     }

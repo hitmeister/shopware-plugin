@@ -1,4 +1,4 @@
-//{namespace name=backend/hm/translation}
+//{namespace name=backend/hm/view/category}
 Ext.define('Shopware.apps.Hm.view.category.hm.Tree', {
     extend: 'Ext.tree.Panel',
     alias: 'widget.hm-category-hm-tree',
@@ -22,7 +22,7 @@ Ext.define('Shopware.apps.Hm.view.category.hm.Tree', {
 
         me.columns = [{
             xtype: 'treecolumn',
-            text: '{s name=view/category/hm/column_title}Hitmeister categories{/s}',
+            text: '{s name=hm/category/hm/column/title}{/s}',
             sortable: false,
             menuDisabled: true,
             flex: 1,
@@ -42,7 +42,7 @@ Ext.define('Shopware.apps.Hm.view.category.hm.Tree', {
             items: [
                 {
                     xtype: 'button',
-                    text: '{s name=view/category/hm/button_map_selected}Map selected{/s}',
+                    text: '{s name=hm/category/hm/toolbar/button/map_selected}{/s}',
                     iconCls: 'sprite-plus-circle-frame',
                     disabled: true,
                     itemId: 'addMap',
@@ -55,14 +55,14 @@ Ext.define('Shopware.apps.Hm.view.category.hm.Tree', {
                             node = sm.getSelection()[0];
                             me.fireEvent('addMap', node.data);
                         } else {
-                            Ext.MessageBox.alert('Error', '{s name=view/category/hm/alert_not_selected}Please, select item first!{/s}');
+                            Ext.MessageBox.alert('Error', '{s name=hm/category/alert/not_selected}{/s}');
                         }
                     }
                 },
                 '->',
                 {
                     xtype: 'textfield',
-                    emptyText: '{s name=view/category/hm/search_empty}Search...{/s}',
+                    emptyText: '{s name=hm/category/toolbar/search_empty}Search...{/s}',
                     cls: 'searchfield',
                     enableKeyEvents: true,
                     checkChangeBuffer: 200,
@@ -83,7 +83,7 @@ Ext.define('Shopware.apps.Hm.view.category.hm.Tree', {
         me.callParent(arguments);
     },
 
-    itemClicked: function(view, record) {
+    itemClicked: function(view) {
         var p = view.up('panel'),
             b = p.down('toolbar > button[itemId=addMap]');
 

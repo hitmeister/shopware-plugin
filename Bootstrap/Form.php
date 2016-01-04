@@ -29,29 +29,29 @@ class Form
      */
     public function create()
     {
-        $this->form->setDescription('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt. Sed nec pretium massa, et pharetra purus. Nunc rhoncus porta est sit amet accumsan. Cras quam metus, interdum vel ornare at, cursus ut risus. Etiam neque neque, dictum vel elit vitae, sagittis imperdiet purus. Suspendisse nec risus eget ante facilisis commodo. Etiam consectetur luctus rutrum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris ultricies elit lacus, non vestibulum felis ullamcorper id. Quisque mi dolor, mollis sit amet blandit vel, eleifend at ante.');
+        $this->form->setDescription('<p>Hitmeister ist eines der größten deutschen Online-Shopping-Portale mitten im Herzen von Köln. 100% sicheres, einfaches, günstiges und persönliches Einkaufs- und Verkaufserlebnis. Die Zahlungsabwicklung und auch sämtliche Marketingmaßnahmen werden von Hitmeister übernommen. Angebote werden anhand der EAN eingestellt, die Abrechnung erfolgt anhand eines einfachen Gebührenmodells. Bei Fragen steht Ihnen die Händlerbetreuung telefonisch unter <b>+49-221-975979-79</b> oder per E-Mail an <b>partnermanagement@hitmeister.de</b> gerne zur Verfügung.</p><p>Um zu starten, bitten wir Sie die unten abgefragten Informationen zu hinterlegen, damit die Abwicklung zwischen Ihrem System und Hitmeister reibungslos funktioniert.  Einige der Informationen finden Sie in Ihrem Hitmeister-Versandpartner Account unter Shopeinstellungen, daher bitten wir Sie, sich parallel in Ihrem Hitmeister-Account einzuloggen.</p>');
 
         $this->form->setElement('button', 'openForm', array(
-            'label' => 'New customer?',
+            'label' => 'Jetzt registrieren!',
             'handler' => 'function () { window.open("https://www.hitmeister.de/versandpartner/online-marktplatz/"); }',
         ));
 
         // Api settings
         $this->form->setElement('text', 'clientKey', array(
             'label' => 'API: Client key',
-            'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+            'description' => 'Diese Information finden Sie im Hitmeister Account unter Shopseinstellungen; API.',
             'required' => true,
         ));
 
         $this->form->setElement('text', 'secretKey', array(
             'label' => 'API: Secret key',
-            'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+            'description' => 'Diese Information finden Sie im Hitmeister-Account unter Shopseinstellungen; API.',
             'required' => true,
         ));
 
         $this->form->setElement('text', 'apiUrl', array(
             'label' => 'API: URL',
-            'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+            'description' => 'Welche API Version nutzen Sie',
             'value' => 'https://www.hitmeister.de/api/v1/',
             'required' => true,
         ));
@@ -59,7 +59,7 @@ class Form
         // Stock management
         $this->form->setElement('select', 'defaultDelivery', array(
             'label' => 'Stock: Default delivery time',
-            'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+            'description' => 'Sollten Sie bei Artikeln keine Lieferzeit hinterlegt haben, dann wird diese hier eingetragene Lieferzeit automatisch hinterlegt.',
             'value' => Constants::DELIVERY_TIME_H,
             'required' => true,
             'store' => array(
@@ -77,7 +77,7 @@ class Form
 
         $this->form->setElement('select', 'defaultCondition', array(
             'label' => 'Stock: Default article condition',
-            'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+            'description' => 'Bitte legen Sie den globalen Artikelzustand fest. Diese Einstellung wird für alle auf Hitmeister angebotenen Artikel übernommen.',
             'value' => Constants::CONDITION_NEW,
             'required' => true,
             'store' => array(
@@ -93,7 +93,7 @@ class Form
         $deliveryMethods = Shopware()->Db()->fetchAll('SELECT id, name FROM s_premium_dispatch', array(), \PDO::FETCH_NUM);
         $this->form->setElement('select', 'defaultDeliveryMethod', array(
             'label' => 'Orders: Default delivery method',
-            'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+            'description' => 'Bitte verknüpfen Sie Ihre Shopware Versandart.',
             'required' => true,
             'value' => !empty($deliveryMethods) ? $deliveryMethods[0][0] : '',
             'store' => $deliveryMethods,
@@ -102,7 +102,7 @@ class Form
         $paymentMethods = Shopware()->Db()->fetchAll('SELECT id, name FROM s_core_paymentmeans', array(), \PDO::FETCH_NUM);
         $this->form->setElement('select', 'defaultPaymentMethod', array(
             'label' => 'Orders: Default payment method',
-            'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+            'description' => 'Bitte wählen Sie eine Bezahlmethode, die Ihrem System mitteilt, dass der Kauf bereits bezahlt ist, da Hitmeister die Zahlungsabwicklung für Sie übernimmt.',
             'required' => true,
             'value' => !empty($paymentMethods) ? $paymentMethods[0][0] : '',
             'store' => $paymentMethods,
@@ -111,7 +111,7 @@ class Form
         $shops = Shopware()->Db()->fetchAll('SELECT id, name FROM s_core_shops', array(), \PDO::FETCH_NUM);
         $this->form->setElement('select', 'defaultShop', array(
             'label' => 'Orders: Default shop',
-            'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+            'description' => 'Welcher Subshop soll mit Hitmeister.de verbunden werden?',
             'required' => true,
             'value' => !empty($shops) ? $shops[0][0] : '',
             'store' => $shops,
@@ -120,7 +120,7 @@ class Form
         // Delivery
         $this->form->setElement('select', 'defaultCarrier', array(
             'label' => 'Shipping: Default carrier',
-            'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer convallis elit at ligula vehicula, eu tempor arcu tincidunt.',
+            'description' => 'Welchen Versanddienstleister nutzen Sie?',
             'value' => Constants::CARRIER_CODE_DHL,
             'required' => true,
             'store' => array(

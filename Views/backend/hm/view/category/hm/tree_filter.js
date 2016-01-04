@@ -1,3 +1,4 @@
+//{namespace name=backend/hm/view/category}
 Ext.define('Shopware.apps.Hm.view.category.hm.TreeFilter', {
     extend: 'Ext.AbstractPlugin',
     alias: 'plugin.hm-category-hm-tree-filter',

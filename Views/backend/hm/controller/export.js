@@ -1,4 +1,4 @@
-//{namespace name=backend/hm/translation}
+//{namespace name=backend/hm/controller/export}
 Ext.define('Shopware.apps.Hm.controller.Export', {
     extend: 'Ext.app.Controller',
 
@@ -8,9 +8,6 @@ Ext.define('Shopware.apps.Hm.controller.Export', {
             selector: 'hm-export-grid'
         }
     ],
-
-    waitingText: '{s name=waiting_working}Working...{/s}',
-    alertText: '{s name=alert_title}Alert!{/s}',
 
     init: function () {
         var me = this;
@@ -26,7 +23,7 @@ Ext.define('Shopware.apps.Hm.controller.Export', {
 
     onExport: function() {
         var me = this,
-            msg = Ext.MessageBox.wait(me.waitingText);
+            msg = Ext.MessageBox.wait('{s name=hm/export/working}{/s}');
 
         Ext.Ajax.request({
             url: '{url controller=HmExports action=export}',
@@ -39,12 +36,10 @@ Ext.define('Shopware.apps.Hm.controller.Export', {
     },
 
     riseMessage: function(success, response) {
-        var me = this;
-
         if (success) {
             var res = Ext.decode(response.responseText);
             if (res.message != undefined && res.message != '') {
-                Ext.Msg.alert(me.alertText, res.message);
+                Ext.Msg.alert('{s name=hm/export/alert/title}Alert!{/s}', res.message);
             }
         }
     }

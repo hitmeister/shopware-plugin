@@ -1,4 +1,4 @@
-//{namespace name=backend/hm/translation}
+//{namespace name=backend/hm/controller/stock}
 Ext.define('Shopware.apps.Hm.controller.Stock', {
     extend: 'Ext.app.Controller',
 
@@ -8,10 +8,6 @@ Ext.define('Shopware.apps.Hm.controller.Stock', {
             selector: 'hm-stock-grid'
         }
     ],
-
-    waitingText: '{s name=waiting_working}Working...{/s}',
-    alertText: '{s name=alert_title}Alert!{/s}',
-    infoText: '{s name=controller/stock/sync_all/info/text}You can use the <b><i>Cancel process</i></b> button the cancel the process. Depending on the amount of the data set, this process might take a while.{/s}',
 
     init: function () {
         var me = this;
@@ -47,7 +43,7 @@ Ext.define('Shopware.apps.Hm.controller.Stock', {
 
     changeStatusById: function (id, status) {
         var me = this,
-            msg = Ext.MessageBox.wait(me.waitingText);
+            msg = Ext.MessageBox.wait('{s name=hm/stock/working}{/s}');
 
         Ext.Ajax.request({
             url: '{url controller=HmArticles action=changeStatusById}',
@@ -66,7 +62,7 @@ Ext.define('Shopware.apps.Hm.controller.Stock', {
     onSync: function (record) {
         var me = this,
             id = record.get('id'),
-            msg = Ext.MessageBox.wait(me.waitingText);
+            msg = Ext.MessageBox.wait('{s name=hm/stock/working}{/s}');
 
         Ext.Ajax.request({
             url: '{url controller=HmArticles action=syncStockById}',
@@ -83,19 +79,17 @@ Ext.define('Shopware.apps.Hm.controller.Stock', {
     },
 
     riseMessage: function (success, response) {
-        var me = this;
-
         if (success) {
             var res = Ext.decode(response.responseText);
             if (res.message != undefined && res.message != '') {
-                Ext.Msg.alert(me.alertText, res.message);
+                Ext.Msg.alert('{s name=hm/stock/alert/title}{/s}', res.message);
             }
         }
     },
 
     onSyncAll: function () {
         var me = this,
-            msg = Ext.MessageBox.wait(me.waitingText);
+            msg = Ext.MessageBox.wait('{s name=hm/stock/working}{/s}');
 
         Ext.Ajax.request({
             url: '{url controller=HmArticles action=readyForSync}',
@@ -110,13 +104,13 @@ Ext.define('Shopware.apps.Hm.controller.Stock', {
                 }
 
                 var process = Ext.create('Shopware.window.Progress', {
-                    title: '{s name=controller/stock/sync_all/title}Synchronise stock for ALL articles{/s}',
+                    title: '{s name=hm/stock/sync_all/title}Synchronise stock for ALL articles{/s}',
                     configure: function () {
                         return {
-                            infoText: me.infoText,
+                            infoText: '{s name=hm/stock/sync_all/info_text}{/s}',
                             tasks: [{
                                 event: 'hm-sync-stock',
-                                text: '{s name=controller/stock/sync_all/article_n_of_m}Article [0] of [1]{/s}',
+                                text: '{s name=hm/stock/sync_all/article_n_of_m}{/s}',
                                 data: res.data
                             }]
                         }

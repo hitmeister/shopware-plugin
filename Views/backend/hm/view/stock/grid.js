@@ -1,4 +1,4 @@
-//{namespace name=backend/hm/translation}
+//{namespace name=backend/hm/view/stock}
 Ext.define('Shopware.apps.Hm.view.stock.Grid', {
     extend: 'Ext.grid.Panel',
     alias: 'widget.hm-stock-grid',
@@ -42,46 +42,46 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
 
         return [
             {
-                text: '{s name=view/stock/grid/column/article_num_title}Article number{/s}',
+                text: '{s name=hm/stock/grid/column/article/title}{/s}',
                 dataIndex: 'ordernumber',
                 menuDisabled: true,
                 flex: 1
             },
             {
-                text: '{s name=view/stock/grid/column/ean_title}Ean{/s}',
+                text: '{s name=hm/stock/grid/column/ean/title}{/s}',
                 dataIndex: 'ean',
                 menuDisabled: true,
                 width: 120,
                 renderer: function (value, metaData) {
                     if ('' == Ext.String.trim(value)) {
                         metaData.tdCls = 'grid-cell-empty-ean';
-                        return '{s name=view/stock/grid/column/ean/required}** Empty but required **{/s}';
+                        return '{s name=hm/stock/grid/column/ean/required}{/s}';
                     }
                     return value;
                 }
             },
             {
-                text: '{s name=view/stock/grid/column/name_variant_title}Name / Variant{/s}',
+                text: '{s name=hm/stock/grid/column/name/title}{/s}',
                 dataIndex: 'name',
                 menuDisabled: true,
                 flex: 2
             },
             {
-                text: '{s name=view/stock/grid/column/in_stock_title}Stock{/s}',
+                text: '{s name=hm/stock/grid/column/is_stock/title}{/s}',
                 dataIndex: 'instock',
                 menuDisabled: true,
                 width: 40
             },
             {
                 xtype: 'datecolumn',
-                text: '{s name=view/stock/grid/column/hm_last_access_date_title}Last update date{/s}',
+                text: '{s name=hm/stock/grid/column/last_access_date/title}{/s}',
                 format: 'Y-m-d H:i:s',
                 dataIndex: 'hm_last_access_date',
                 menuDisabled: true,
                 width: 120
             },
             {
-                text: '{s name=view/stock/grid/column/hm_status_title}Status{/s}',
+                text: '{s name=hm/stock/grid/column/status/title}{/s}',
                 dataIndex: 'hm_status',
                 menuDisabled: true,
                 width: 110,
@@ -89,25 +89,25 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                     var status = record.get('hm_status');
                     switch (status) {
                         case me.StatusNew:
-                            return '{s name=view/stock/grid/column/status/new_value}New{/s}';
+                            return '{s name=hm/stock/grid/column/status/value/new}{/s}';
                         case me.StatusBlocked:
-                            return '{s name=view/stock/grid/column/status/blocked_value}Not for sale{/s}';
+                            return '{s name=hm/stock/grid/column/status/value/blocked}{/s}';
                         case me.StatusNotFound:
-                            return '{s name=view/stock/grid/column/status/not_found_value}Not found on HM{/s}';
+                            return '{s name=hm/stock/grid/column/status/value/not_found}{/s}';
                         case me.StatusSynchronizing:
-                            return '{s name=view/stock/grid/column/status/synchronizing_value}Synchronizing{/s}';
+                            return '{s name=hm/stock/grid/column/status/value/synchronizing}{/s}';
                     }
                 }
             },
             {
                 xtype: 'actioncolumn',
-                text: '{s name=view/stock/grid/column/options_title}Options{/s}',
+                text: '{s name=hm/stock/grid/column/options/title}{/s}',
                 menuDisabled: true,
                 width: 60,
                 items: [
                     {
                         iconCls: 'sprite-plus-circle-frame',
-                        tooltip: '{s name=view/stock/grid/column/options/list_title}Unblock synchronization with Hitmeister.de{/s}',
+                        tooltip: '{s name=hm/stock/grid/column/options/unblock/title}{/s}',
                         handler: function (grid, rowIndex) {
                             var record = grid.getStore().getAt(rowIndex);
                             me.fireEvent('unblock', record)
@@ -119,7 +119,7 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                     },
                     {
                         iconCls: 'sprite-minus-circle-frame',
-                        tooltip: '{s name=view/stock/grid/column/options/remove_title}Block synchronization with Hitmeister.de{/s}',
+                        tooltip: '{s name=hm/stock/grid/column/options/block/title}{/s}',
                         handler: function (grid, rowIndex) {
                             var record = grid.getStore().getAt(rowIndex);
                             me.fireEvent('block', record)
@@ -131,7 +131,7 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                     },
                     {
                         iconCls: 'sprite-arrow-circle-045-left',
-                        tooltip: '{s name=view/stock/grid/column/options/sync_title}Sync stock{/s}',
+                        tooltip: '{s name=hm/stock/grid/column/options/sync_stock/title}{/s}',
                         handler: function (grid, rowIndex) {
                             var record = grid.getStore().getAt(rowIndex);
                             me.fireEvent('sync', record)
@@ -171,7 +171,7 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
             items: [
                 {
                     xtype: 'button',
-                    text: '{s name=view/stock/grid/toolbar/button_sync_stock_listed}Sync stock for ALL articles{/s}',
+                    text: '{s name=hm/stock/grid/toolbar/button/sync_stock_listed}{/s}',
                     iconCls: 'sprite-arrow-circle-045-left',
                     handler: function () {
                         me.fireEvent('sync_all')
@@ -180,7 +180,7 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                 '->',
                 {
                     xtype: 'textfield',
-                    emptyText: '{s name=view/stock/grid/toolbar/search_empty}Search...{/s}',
+                    emptyText: '{s name=hm/stock/grid/toolbar/search_empty}{/s}',
                     cls: 'searchfield',
                     enableKeyEvents: true,
                     checkChangeBuffer: 200,

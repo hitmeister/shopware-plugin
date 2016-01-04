@@ -1,4 +1,4 @@
-//{namespace name=backend/hm/translation}
+//{namespace name=backend/hm/view/notifications}
 Ext.define('Shopware.apps.Hm.view.notifications.Grid', {
     extend: 'Ext.grid.Panel',
     alias: 'widget.hm-notifications-grid',
@@ -23,7 +23,7 @@ Ext.define('Shopware.apps.Hm.view.notifications.Grid', {
 
         return [
             {
-                text: '{s name=view/notifications/grid/column/event_name_title}Event name{/s}',
+                text: '{s name=hm/notifications/grid/column/event_name/title}{/s}',
                 dataIndex: 'event_name',
                 menuDisabled: true,
                 sortable: false,
@@ -31,7 +31,7 @@ Ext.define('Shopware.apps.Hm.view.notifications.Grid', {
             },
             {
                 xtype: 'booleancolumn',
-                text: '{s name=view/notifications/grid/column/active_title}Active{/s}',
+                text: '{s name=hm/notifications/grid/column/active/title}{/s}',
                 dataIndex: 'is_active',
                 menuDisabled: true,
                 sortable: false,
@@ -45,14 +45,14 @@ Ext.define('Shopware.apps.Hm.view.notifications.Grid', {
                 }
             },
             {
-                text: '{s name=view/notifications/grid/column/callback_url_title}Callback URL{/s}',
+                text: '{s name=hm/notifications/grid/column/callback_url/title}{/s}',
                 dataIndex: 'callback_url',
                 menuDisabled: true,
                 sortable: false,
                 flex: 2
             },
             {
-                text: '{s name=view/notifications/grid/column/fallback_email_title}Fallback email{/s}',
+                text: '{s name=hm/notifications/grid/column/fallback_email/title}{/s}',
                 dataIndex: 'fallback_email',
                 menuDisabled: true,
                 sortable: false,
@@ -60,13 +60,13 @@ Ext.define('Shopware.apps.Hm.view.notifications.Grid', {
             },
             {
                 xtype: 'actioncolumn',
-                text: '{s name=view/notifications/grid/column/options_title}Options{/s}',
+                text: '{s name=hm/notifications/grid/column/options/title}{/s}',
                 menuDisabled: true,
                 width: 50,
                 items: [
                     {
                         iconCls: 'sprite-plus-circle-frame',
-                        tooltip: '{s name=view/notifications/grid/column/options/activate_title}Activate{/s}',
+                        tooltip: '{s name=hm/notifications/grid/column/options/activate}{/s}',
                         handler: function(grid, rowIndex) {
                             var record = grid.getStore().getAt(rowIndex);
                             me.fireEvent('enable', record)
@@ -77,7 +77,7 @@ Ext.define('Shopware.apps.Hm.view.notifications.Grid', {
                     },
                     {
                         iconCls: 'sprite-minus-circle-frame',
-                        tooltip: '{s name=view/notifications/grid/column/options/stop_title}Stop{/s}',
+                        tooltip: '{s name=hm/notifications/grid/column/options/stop}{/s}',
                         handler: function(grid, rowIndex) {
                             var record = grid.getStore().getAt(rowIndex);
                             me.fireEvent('disable', record)
@@ -110,7 +110,7 @@ Ext.define('Shopware.apps.Hm.view.notifications.Grid', {
             items: [
                 {
                     xtype: 'button',
-                    text: '{s name=view/notifications/grid/toolbar/button_enable_all}Enable ALL{/s}',
+                    text: '{s name=hm/notifications/grid/toolbar/button/enable_all}{/s}',
                     iconCls: 'sprite-plus-circle-frame',
                     handler: function() {
                         me.fireEvent('enable_all')
@@ -118,7 +118,7 @@ Ext.define('Shopware.apps.Hm.view.notifications.Grid', {
                 },
                 {
                     xtype: 'button',
-                    text: '{s name=view/notifications/grid/toolbar/button_disable_all}Disable ALL{/s}',
+                    text: '{s name=hm/notifications/grid/toolbar/button/disable_all}{/s}',
                     iconCls: 'sprite-minus-circle-frame',
                     handler: function() {
                         me.fireEvent('disable_all')

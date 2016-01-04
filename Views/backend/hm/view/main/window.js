@@ -1,11 +1,11 @@
-//{namespace name=backend/hm/translation}
+//{namespace name=backend/hm/view/main}
 Ext.define('Shopware.apps.Hm.view.main.Window', {
     extend: 'Enlight.app.Window',
 
     layout: 'fit',
     autoShow: false,
 
-    title: '{s name="main_title"}Hitmeister.de Online-Shopping portal{/s}',
+    title: '{s name="main_title"}{/s}',
 
     // Components
     tabPanel: null,

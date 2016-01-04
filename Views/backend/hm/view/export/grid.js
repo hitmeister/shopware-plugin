@@ -1,4 +1,4 @@
-//{namespace name=backend/hm/translation}
+//{namespace name=backend/hm/view/export}
 Ext.define('Shopware.apps.Hm.view.export.Grid', {
     extend: 'Ext.grid.Panel',
     alias: 'widget.hm-export-grid',
@@ -30,32 +30,30 @@ Ext.define('Shopware.apps.Hm.view.export.Grid', {
     },
 
     getCreateColumns: function() {
-        var me = this;
-
         return [
             {
-                text: '{s name=view/export/grid/column/id_title}Id{/s}',
+                text: '{s name=hm/stock/grid/column/id/title}{/s}',
                 dataIndex: 'id_import_file',
                 menuDisabled: true,
                 sortable: false,
                 width: 70
             },
             {
-                text: '{s name=view/export/grid/column/status_title}Status{/s}',
+                text: '{s name=hm/stock/grid/column/status/title}{/s}',
                 dataIndex: 'status',
                 menuDisabled: true,
                 sortable: false,
                 width: 120
             },
             {
-                text: '{s name=view/export/grid/column/total_lines_title}Lines{/s}',
+                text: '{s name=hm/stock/grid/column/total_lines/title}{/s}',
                 dataIndex: 'total_lines',
                 menuDisabled: true,
                 sortable: false,
                 width: 40
             },
             {
-                text: '{s name=view/export/grid/column/error_count_title}Errors{/s}',
+                text: '{s name=hm/stock/grid/column/error_count/title}{/s}',
                 dataIndex: 'error_count',
                 menuDisabled: true,
                 sortable: false,
@@ -63,7 +61,7 @@ Ext.define('Shopware.apps.Hm.view.export.Grid', {
             },
             {
                 xtype: 'datecolumn',
-                text: '{s name=view/export/grid/column/ts_created_date_title}Created date{/s}',
+                text: '{s name=hm/stock/grid/column/ts_created_date/title}{/s}',
                 format: 'Y-m-d H:i:s',
                 dataIndex: 'ts_created',
                 menuDisabled: true,
@@ -72,7 +70,7 @@ Ext.define('Shopware.apps.Hm.view.export.Grid', {
             },
             {
                 xtype: 'datecolumn',
-                text: '{s name=view/export/grid/column/ts_completed_title}Completed date{/s}',
+                text: '{s name=hm/stock/grid/column/ts_completed/title}{/s}',
                 format: 'Y-m-d H:i:s',
                 dataIndex: 'ts_completed',
                 menuDisabled: true,
@@ -80,7 +78,7 @@ Ext.define('Shopware.apps.Hm.view.export.Grid', {
                 width: 120
             },
             {
-                text: '{s name=view/export/grid/column/note_title}Note{/s}',
+                text: '{s name=hm/stock/grid/column/note/title}{/s}',
                 dataIndex: 'note',
                 menuDisabled: true,
                 sortable: false,
@@ -94,7 +92,7 @@ Ext.define('Shopware.apps.Hm.view.export.Grid', {
                 items: [
                     {
                         iconCls: 'sprite-lightning',
-                        tooltip: '{s name=view/export/grid/column/options/open_link_title}Open link in browser{/s}',
+                        tooltip: '{s name=hm/stock/grid/column/open_link/title}{/s}',
                         handler: function(grid, rowIndex) {
                             var record = grid.getStore().getAt(rowIndex);
                             window.open(record.get('uri'));
@@ -124,7 +122,7 @@ Ext.define('Shopware.apps.Hm.view.export.Grid', {
             items: [
                 {
                     xtype: 'button',
-                    text: '{s name=view/export/grid/toolbar/button_export}Export{/s}',
+                    text: '{s name=hm/stock/grid/toolbar/button/export}{/s}',
                     iconCls: 'sprite-plus-circle-frame',
                     handler: function() {
                         me.fireEvent('export')

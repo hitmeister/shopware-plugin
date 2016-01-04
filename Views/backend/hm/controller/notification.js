@@ -1,4 +1,4 @@
-//{namespace name=backend/hm/translation}
+//{namespace name=backend/hm/controller/notifications}
 Ext.define('Shopware.apps.Hm.controller.Notification', {
     extend: 'Ext.app.Controller',
 
@@ -8,9 +8,6 @@ Ext.define('Shopware.apps.Hm.controller.Notification', {
             selector: 'hm-notifications-grid'
         }
     ],
-
-    waitingText: '{s name=waiting_working}Working...{/s}',
-    alertText: '{s name=alert_title}Alert!{/s}',
 
     init: function () {
         var me = this;
@@ -29,7 +26,7 @@ Ext.define('Shopware.apps.Hm.controller.Notification', {
 
     onEnableAll: function() {
         var me = this,
-            msg = Ext.MessageBox.wait(me.waitingText);
+            msg = Ext.MessageBox.wait('{s name=hm/notifications/working}Working...{/s}');
 
         Ext.Ajax.request({
             url: '{url controller=HmNotifications action=enableAll}',
@@ -43,7 +40,7 @@ Ext.define('Shopware.apps.Hm.controller.Notification', {
 
     onDisableAll: function() {
         var me = this,
-            msg = Ext.MessageBox.wait(me.waitingText);
+            msg = Ext.MessageBox.wait('{s name=hm/notifications/working}Working...{/s}');
 
         Ext.Ajax.request({
             url: '{url controller=HmNotifications action=disableAll}',
@@ -71,7 +68,7 @@ Ext.define('Shopware.apps.Hm.controller.Notification', {
 
     changeStatusById: function(id, status) {
         var me = this,
-            msg = Ext.MessageBox.wait(me.waitingText);
+            msg = Ext.MessageBox.wait('{s name=hm/notifications/working}Working...{/s}');
 
         Ext.Ajax.request({
             url: '{url controller=HmNotifications action=changeStatusById}',
@@ -88,12 +85,10 @@ Ext.define('Shopware.apps.Hm.controller.Notification', {
     },
 
     riseMessage: function(success, response) {
-        var me = this;
-
         if (success) {
             var res = Ext.decode(response.responseText);
             if (res.message != undefined && res.message != '') {
-                Ext.Msg.alert(me.alertText, res.message);
+                Ext.Msg.alert('{s name=hm/notifications/alert/title}Alert!{/s}', res.message);
             }
         }
     }

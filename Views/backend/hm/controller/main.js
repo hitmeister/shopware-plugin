@@ -1,4 +1,4 @@
-//{namespace name=backend/hm/translation}
+//{namespace name=backend/hm/controller/main}
 Ext.define('Shopware.apps.Hm.controller.Main', {
     extend: 'Ext.app.Controller',
 
@@ -23,17 +23,17 @@ Ext.define('Shopware.apps.Hm.controller.Main', {
         Ext.Ajax.request({
             url: '{url controller=Hm action=checkConfig}',
             method: 'POST',
-            success: function (operation, opts) {
+            success: function (operation) {
                 var response = Ext.decode(operation.responseText);
 
                 Shopware.app.Application.hitmeisterAvailable = response.success;
 
                 if (!Shopware.app.Application.hitmeisterAvailable) {
                     Shopware.Notification.createStickyGrowlMessage({
-                        text: '{s name="hitmeister_not_available"}Hitmeister.de plugin is not available. You have to specify correct client key and secret in the plugin configuration.{/s}',
+                        text: '{s name="hitmeister_not_available"}{/s}',
                         log: false,
                         btnDetail: {
-                            text: '{s name="open_basic_settings"}Open basic settings{/s}',
+                            text: '{s name="open_basic_settings"}{/s}',
                             callback: function () {
                                 Shopware.app.Application.addSubApplication({
                                     name: 'Shopware.apps.Config'
