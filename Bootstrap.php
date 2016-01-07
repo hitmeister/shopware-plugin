@@ -1,14 +1,14 @@
 <?php
 
-use ShopwarePlugins\HmMarketplace\Bootstrap\Attributes;
-use ShopwarePlugins\HmMarketplace\Bootstrap\Form;
-use ShopwarePlugins\HmMarketplace\Subscriber\Backend;
-use ShopwarePlugins\HmMarketplace\Subscriber\ControllerPath;
-use ShopwarePlugins\HmMarketplace\Subscriber\Ordering;
-use ShopwarePlugins\HmMarketplace\Subscriber\Resources;
-use ShopwarePlugins\HmMarketplace\Subscriber\Stock;
+use ShopwarePlugins\HitmeMarketplace\Bootstrap\Attributes;
+use ShopwarePlugins\HitmeMarketplace\Bootstrap\Form;
+use ShopwarePlugins\HitmeMarketplace\Subscriber\Backend;
+use ShopwarePlugins\HitmeMarketplace\Subscriber\ControllerPath;
+use ShopwarePlugins\HitmeMarketplace\Subscriber\Ordering;
+use ShopwarePlugins\HitmeMarketplace\Subscriber\Resources;
+use ShopwarePlugins\HitmeMarketplace\Subscriber\Stock;
 
-class Shopware_Plugins_Backend_HmMarketplace_Bootstrap extends Shopware_Components_Plugin_Bootstrap
+class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Components_Plugin_Bootstrap
 {
     /**
      * {@inheritDoc}
@@ -78,7 +78,7 @@ class Shopware_Plugins_Backend_HmMarketplace_Bootstrap extends Shopware_Componen
      */
     public function afterInit()
     {
-        $this->Application()->Loader()->registerNamespace('ShopwarePlugins\HmMarketplace', $this->Path());
+        $this->Application()->Loader()->registerNamespace('ShopwarePlugins\HitmeMarketplace', $this->Path());
         $this->Application()->Loader()->registerNamespace('Hitmeister\Component\Api', $this->Path() . 'Lib/Api/');
     }
 

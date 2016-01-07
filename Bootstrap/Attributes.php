@@ -1,6 +1,6 @@
 <?php
 
-namespace ShopwarePlugins\HmMarketplace\Bootstrap;
+namespace ShopwarePlugins\HitmeMarketplace\Bootstrap;
 
 class Attributes
 {

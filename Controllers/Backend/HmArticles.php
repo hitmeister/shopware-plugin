@@ -1,6 +1,6 @@
 <?php
 
-use ShopwarePlugins\HmMarketplace\Components\StockManagement;
+use ShopwarePlugins\HitmeMarketplace\Components\StockManagement;
 
 class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backend_ExtJs
 {

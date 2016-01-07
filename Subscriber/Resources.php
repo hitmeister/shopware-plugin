@@ -1,13 +1,13 @@
 <?php
 
-namespace ShopwarePlugins\HmMarketplace\Subscriber;
+namespace ShopwarePlugins\HitmeMarketplace\Subscriber;
 
 use Enlight\Event\SubscriberInterface;
 use Hitmeister\Component\Api\ClientBuilder;
-use ShopwarePlugins\HmMarketplace\Components\CategoryFetcher;
-use ShopwarePlugins\HmMarketplace\Components\Exporter;
-use ShopwarePlugins\HmMarketplace\Components\Ordering;
-use ShopwarePlugins\HmMarketplace\Components\StockManagement;
+use ShopwarePlugins\HitmeMarketplace\Components\CategoryFetcher;
+use ShopwarePlugins\HitmeMarketplace\Components\Exporter;
+use ShopwarePlugins\HitmeMarketplace\Components\Ordering;
+use ShopwarePlugins\HitmeMarketplace\Components\StockManagement;
 
 class Resources implements SubscriberInterface
 {

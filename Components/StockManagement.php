@@ -1,6 +1,6 @@
 <?php
 
-namespace ShopwarePlugins\HmMarketplace\Components;
+namespace ShopwarePlugins\HitmeMarketplace\Components;
 
 use Doctrine\DBAL\Connection;
 use Hitmeister\Component\Api\Client;

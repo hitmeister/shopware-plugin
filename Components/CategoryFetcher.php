@@ -1,6 +1,6 @@
 <?php
 
-namespace ShopwarePlugins\HmMarketplace\Components;
+namespace ShopwarePlugins\HitmeMarketplace\Components;
 
 use Hitmeister\Component\Api\Client;
 

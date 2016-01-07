@@ -1,6 +1,6 @@
 <?php
 
-use ShopwarePlugins\HmMarketplace\Components\CategoryFetcher;
+use ShopwarePlugins\HitmeMarketplace\Components\CategoryFetcher;
 
 class Shopware_Controllers_Backend_HmCategories extends Shopware_Controllers_Backend_ExtJs
 {

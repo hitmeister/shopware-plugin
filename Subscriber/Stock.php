@@ -1,11 +1,11 @@
 <?php
 
-namespace ShopwarePlugins\HmMarketplace\Subscriber;
+namespace ShopwarePlugins\HitmeMarketplace\Subscriber;
 
 use Enlight\Event\SubscriberInterface;
 use Psr\Log\LoggerInterface;
 use Shopware\Models\Article\Detail;
-use ShopwarePlugins\HmMarketplace\Components\StockManagement;
+use ShopwarePlugins\HitmeMarketplace\Components\StockManagement;
 
 class Stock implements SubscriberInterface
 {

@@ -2,7 +2,7 @@
 
 use Hitmeister\Component\Api\Client;
 use Hitmeister\Component\Api\Transfers\Constants;
-use ShopwarePlugins\HmMarketplace\Components\Exporter;
+use ShopwarePlugins\HitmeMarketplace\Components\Exporter;
 
 class Shopware_Controllers_Backend_HmExports extends Shopware_Controllers_Backend_ExtJs
 {

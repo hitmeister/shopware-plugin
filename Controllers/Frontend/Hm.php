@@ -1,8 +1,8 @@
 <?php
 
 use Hitmeister\Component\Api\Transfers\Constants;
-use ShopwarePlugins\HmMarketplace\Components\Exporter;
-use ShopwarePlugins\HmMarketplace\Components\Ordering;
+use ShopwarePlugins\HitmeMarketplace\Components\Exporter;
+use ShopwarePlugins\HitmeMarketplace\Components\Ordering;
 
 class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace ShopwarePlugins\HmMarketplace\Bootstrap;
+namespace ShopwarePlugins\HitmeMarketplace\Bootstrap;
 
 use Hitmeister\Component\Api\Transfers\Constants;
 use Shopware\Models\Config\Element;

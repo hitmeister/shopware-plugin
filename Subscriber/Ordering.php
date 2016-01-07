@@ -1,6 +1,6 @@
 <?php
 
-namespace ShopwarePlugins\HmMarketplace\Subscriber;
+namespace ShopwarePlugins\HitmeMarketplace\Subscriber;
 
 use Enlight\Event\SubscriberInterface;
 use Hitmeister\Component\Api\Client;
