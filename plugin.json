@@ -4,12 +4,22 @@
     "en": "Hitmeister.de Online shopping portal"
   },
   "menu_label": "Hitmeister.de",
-  "currentVersion": "1.0.0",
+  "currentVersion": "1.0.1",
   "author": "Hitmeister GmbH",
   "copyright": "Copyright © 2015, Hitmeister GmbH",
   "license": "proprietary",
   "support": "support@hitmeister.de",
   "link": "https://www.hitmeister.de",
+  "changelog": {
+    "de": {
+      "1.0.1": "DEV-2210 - Bugfix: Tabellen konnten nicht richtig eingestellt werden;",
+      "1.0.0": "Erstveröffentlichung"
+    },
+    "en": {
+      "1.0.1": "DEV-2210 - Bugfix: Tables may not be configured correctly;",
+      "1.0.0": "First release"
+    }
+  },
   "compatibility": {
     "minimumVersion": "5.0.0",
     "maximumVersion": null

@@ -68,6 +68,18 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
     /**
      * {@inheritDoc}
      */
+    public function update($version)
+    {
+        if ($version == '1.0.0') {
+            Attributes::fixDev2210();
+        }
+
+        return array('success' => true, 'invalidateCache' => array('backend', 'proxy'));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function uninstall()
     {
         return array('success' => true, 'invalidateCache' => array('backend', 'proxy'));

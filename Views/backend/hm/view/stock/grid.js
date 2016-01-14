@@ -88,6 +88,8 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                 renderer: function (value, metaData, record) {
                     var status = record.get('hm_status');
                     switch (status) {
+                        case null:
+                        case '':
                         case me.StatusNew:
                             return '{s name=hm/stock/grid/column/status/value/new}{/s}';
                         case me.StatusBlocked:

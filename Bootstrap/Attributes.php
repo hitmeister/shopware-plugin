@@ -60,8 +60,7 @@ class Attributes
             'hm',
             'status',
             'varchar(20)',
-            false,
-            'new'
+            true
         );
     }
 
@@ -88,8 +87,13 @@ class Attributes
             'hm',
             'status',
             'varchar(20)',
-            false,
-            'new'
+            true
         );
+    }
+
+    public static function fixDev2210()
+    {
+        Shopware()->Db()->query('ALTER TABLE `s_articles_attributes` MODIFY COLUMN `hm_status` VARCHAR(20) NULL DEFAULT NULL');
+        Shopware()->Db()->query('ALTER TABLE `s_order_details_attributes` MODIFY COLUMN `hm_status` VARCHAR(20) NULL DEFAULT NULL');
     }
 }
