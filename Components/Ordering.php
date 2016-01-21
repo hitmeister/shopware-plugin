@@ -146,7 +146,7 @@ class Ordering
         $orderAttributeModel->setAttribute4('');
         $orderAttributeModel->setAttribute5('');
         $orderAttributeModel->setAttribute6('');
-        $orderAttributeModel->setHmOrderId($hmOrder->id_order);
+        $orderAttributeModel->setHmOrderId($hmOrder->id_order?:'');
 
         $orderModel->setAttribute($orderAttributeModel);
 
@@ -193,24 +193,24 @@ class Ordering
 
         $billAddress = new Billing();
         $billAddress->setCountryId($this->getCountryId($billing->country));
-        $billAddress->setFirstName($billing->first_name);
-        $billAddress->setLastName($billing->last_name);
-        $billAddress->setCompany($billing->company_name);
+        $billAddress->setFirstName($billing->first_name?:'');
+        $billAddress->setLastName($billing->last_name?:'');
+        $billAddress->setCompany($billing->company_name?:'');
         $billAddress->setStreet(sprintf('%s %s', $billing->street, $billing->house_number));
-        $billAddress->setZipCode($billing->postcode);
-        $billAddress->setCity($billing->city);
-        $billAddress->setPhone($billing->phone);
-        $billAddress->setAdditionalAddressLine1($billing->additional_field);
+        $billAddress->setZipCode($billing->postcode?:'');
+        $billAddress->setCity($billing->city?:'');
+        $billAddress->setPhone($billing->phone?:'');
+        $billAddress->setAdditionalAddressLine1($billing->additional_field?:'');
 
         $shipAddress = new Shipping();
         $shipAddress->setCountryId($this->getCountryId($shipping->country));
-        $shipAddress->setFirstName($shipping->first_name);
-        $shipAddress->setLastName($shipping->last_name);
-        $shipAddress->setCompany($shipping->company_name);
+        $shipAddress->setFirstName($shipping->first_name?:'');
+        $shipAddress->setLastName($shipping->last_name?:'');
+        $shipAddress->setCompany($shipping->company_name?:'');
         $shipAddress->setStreet(sprintf('%s %s', $shipping->street, $shipping->house_number));
-        $shipAddress->setZipCode($shipping->postcode);
-        $shipAddress->setCity($shipping->city);
-        $shipAddress->setAdditionalAddressLine1($shipping->additional_field);
+        $shipAddress->setZipCode($shipping->postcode?:'');
+        $shipAddress->setCity($shipping->city?:'');
+        $shipAddress->setAdditionalAddressLine1($shipping->additional_field?:'');
 
         $customer->setBilling($billAddress);
         $customer->setShipping($shipAddress);
@@ -366,7 +366,7 @@ class Ordering
         $orderDetailAttributeModel->setAttribute4('');
         $orderDetailAttributeModel->setAttribute5('');
         $orderDetailAttributeModel->setAttribute6('');
-        $orderDetailAttributeModel->setHmOrderUnitId($hmUnit->id_order_unit);
+        $orderDetailAttributeModel->setHmOrderUnitId($hmUnit->id_order_unit?:'');
         $orderDetailModel->setAttribute($orderDetailAttributeModel);
 
         return array($orderDetailModel, $price, $priceNet);
@@ -475,7 +475,7 @@ class Ordering
             array($hmOrderUnitId)
         );
         if (empty($ids)) {
-            throw new \Exception('Order unit not found');
+            return false;
         }
 
         $hmOrderUnit = $this->apiClient->orderUnits()->get($hmOrderUnitId);

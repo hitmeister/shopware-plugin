@@ -1,6 +1,7 @@
 <?php
 
 use ShopwarePlugins\HitmeMarketplace\Bootstrap\Attributes;
+use ShopwarePlugins\HitmeMarketplace\Bootstrap\Callback;
 use ShopwarePlugins\HitmeMarketplace\Bootstrap\Form;
 use ShopwarePlugins\HitmeMarketplace\Subscriber\Backend;
 use ShopwarePlugins\HitmeMarketplace\Subscriber\ControllerPath;
@@ -62,6 +63,8 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
         $this->createConfiguration();
         $this->createMenuEntry();
 
+        Callback::install($this->getVersion());
+
         return array('success' => true, 'invalidateCache' => array('backend', 'proxy'));
     }
 
@@ -74,6 +77,8 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
             Attributes::fixDev2210();
         }
 
+        Callback::update($this->getVersion(), $version);
+
         return array('success' => true, 'invalidateCache' => array('backend', 'proxy'));
     }
 
@@ -82,6 +87,8 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
      */
     public function uninstall()
     {
+        Callback::uninstall($this->getVersion());
+
         return array('success' => true, 'invalidateCache' => array('backend', 'proxy'));
     }
 

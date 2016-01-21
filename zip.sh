@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-FILENAME="HitmeMarketplace-1.0.2.zip"
+FILENAME="HitmeMarketplace-1.0.3.zip"
 
 mkdir -p ../tmp-zip/Backend
 cp -r ../HitmeMarketplace ../tmp-zip/Backend/

@@ -159,7 +159,7 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
 
     public function readyForSyncAction()
     {
-        $sql = "SELECT d.`id` FROM `s_articles_details` d LEFT JOIN `s_articles_attributes` a ON d.id = a.articledetailsID WHERE d.`ean` IS NOT NULL AND d.`ean` != '' AND a.`hm_status` NOT IN ('%s')";
+        $sql = "SELECT d.`id` FROM `s_articles_details` d LEFT JOIN `s_articles_attributes` a ON d.id = a.articledetailsID WHERE d.`ean` IS NOT NULL AND d.`ean` != '' AND (a.`hm_status` NOT IN ('%s') OR a.`hm_status` IS NULL )";
         $query = sprintf($sql, StockManagement::STATUS_BLOCKED);
 
         try {

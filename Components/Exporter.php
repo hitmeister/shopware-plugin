@@ -118,8 +118,10 @@ LEFT JOIN s_articles_img ai ON (a.id = ai.articleID)
 WHERE
 	(d.ean IS NOT NULL AND d.ean != '') AND
 	d.active = 1 AND
-	da.hm_status NOT IN ('blocked')
+	(da.hm_status NOT IN ('%s') OR da.hm_status IS NULL)
 SQL;
+
+        $sql = sprintf($sql, StockManagement::STATUS_BLOCKED);
 
         // Write header
         $header = array('ean', 'title', 'description', 'short_description', 'picture', 'category', 'mpn');
