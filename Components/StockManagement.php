@@ -293,6 +293,6 @@ class StockManagement
             $price = $price * (100 + $tax->getTax()) / 100;
         }
 
-        return ceil($price * 100);
+        return (int)($price * 100);
     }
 }
