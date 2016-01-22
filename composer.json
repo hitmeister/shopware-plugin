@@ -1,0 +1,20 @@
+{
+    "name": "hitmeister/shopware-plugin",
+    "description": "Das Hitmeister Plug-in bietet Ihnen die Möglichkeit der einfachen Anbindung eines weiteren Vertriebskanals, der Ihnen zu mehr Umsatz und zu neuen Kundengruppen verhelfen wird.",
+    "homepage": "http://store.shopware.com/hitme73588763536/hitmeister.de-online-shoppingportal.html",
+    "require": {
+        "hitmeister/api-sdk": "^0.1"
+    },
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Hitmeister GmbH",
+            "email": "support@hitmeister.de"
+        },
+        {
+            "name": "Maksim Naumov",
+            "email": "maksim.naumov@hitmeister.de"
+        }
+    ],
+    "minimum-stability": "beta"
+}

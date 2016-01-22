@@ -98,7 +98,10 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
     public function afterInit()
     {
         $this->Application()->Loader()->registerNamespace('ShopwarePlugins\HitmeMarketplace', $this->Path());
-        $this->Application()->Loader()->registerNamespace('Hitmeister\Component\Api', $this->Path() . 'Lib/Api/');
+
+        // API SDK
+        $sdkPath = ('production' != Shopware()->Environment()) ? 'vendor/hitmeister/api-sdk/src/' : 'Lib/Api/';
+        $this->Application()->Loader()->registerNamespace('Hitmeister\Component\Api', $this->Path() . $sdkPath);
     }
 
     /**
