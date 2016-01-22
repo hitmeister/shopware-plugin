@@ -93,7 +93,6 @@ SELECT
 	CONCAT_WS(', ', a.name, v.variant_text) AS title,
 	a.description_long AS description,
 	a.description AS short_description,
-	IFNULL(i.img, NULLIF(CONCAT_WS('.', ai.img, ai.extension), '') ) AS picture,
 	d.suppliernumber AS mpn
 FROM s_articles_details d
 INNER JOIN s_articles a ON (a.id = d.articleID)
@@ -107,14 +106,6 @@ LEFT JOIN (
 	INNER JOIN s_article_configurator_groups cg ON (cg.id = co.group_id)
 	GROUP BY cor.article_id
 ) v ON (v.article_id = d.id)
-LEFT JOIN (
-	SELECT
-		im.article_detail_id AS articledetailsID,
-		NULLIF(CONCAT_WS('.', imm.img, imm.extension), "") AS img
-	FROM s_articles_img im
-	INNER JOIN s_articles_img imm ON (im.parent_id = imm.id)
-) i ON (i.articledetailsID = d.id)
-LEFT JOIN s_articles_img ai ON (a.id = ai.articleID)
 WHERE
 	(d.ean IS NOT NULL AND d.ean != '') AND
 	d.active = 1 AND
@@ -123,44 +114,81 @@ SQL;
 
         $sql = sprintf($sql, StockManagement::STATUS_BLOCKED);
 
-        // Write header
         $header = array('ean', 'title', 'description', 'short_description', 'picture', 'category', 'mpn');
-        fwrite($handler, implode(';', $header) . ";\n");
+        $writeData = array();
 
         while (true) {
             $stmt = $this->connection->executeQuery($sql . sprintf(' LIMIT %d,%d', $offset, $limit));
             $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-            $ids = array_column($data, 'article_id', 'id');
-            $categories = $this->getCategories($ids);
-
-            // Done
             if (empty($data)) {
                 break;
             }
 
+            $ids = array_column($data, 'article_id', 'id');
+            $categories = $this->getCategories($ids);
+            $pictures = $this->getPictures(array_keys($ids));
+            list($attributes, $attributeKeys) = $this->getAttributes(array_keys($ids));
+
+            foreach ($attributeKeys as $attributeKey) {
+                if (!in_array($attributeKey, $header)) {
+                    $header[] = $attributeKey;
+                }
+            }
+            unset($attributeKeys);
+
             foreach ($data as $item) {
-                if ($item['picture']) {
-                    $item['picture'] = $imageDir . $item['picture'];
+                $line = array();
+
+                foreach ($header as $title) {
+                    switch ($title) {
+                        case 'picture':
+                            $value = '';
+                            if (!empty($pictures[$item['id']])) {
+                                $value = $imageDir . $pictures[$item['id']];
+                            }
+                            break;
+                        case 'category':
+                            $value = $categories[$item['id']] ?: '';
+                            break;
+                        default:
+                            $value = $item[$title] ?: '';
+                            if (empty($value) && isset($attributes[$item['id']])) {
+                                foreach ($attributes[$item['id']] as $k => $v) {
+                                    if ($title == $k) {
+                                        $value = $v;
+                                        break;
+                                    }
+                                }
+                            }
+                            break;
+                    }
+
+                    $line[] = $this->escape($value);
                 }
 
-                $line = array(
-                    $this->escape($item['ean']),
-                    $this->escape($item['title']),
-                    $this->escape($item['description']),
-                    $this->escape($item['short_description']),
-                    $this->escape($item['picture']),
-                    $this->escape($categories[$item['id']]),
-                    $this->escape($item['mpn']),
-                );
-
-                fwrite($handler, implode(';', $line) . ";\n");
+                $writeData[] = $line;
             }
 
-            unset($stmt, $data, $ids, $categories);
+            unset($stmt, $data, $ids, $categories, $attributes, $pictures);
             $offset += $limit;
         }
 
+        fwrite($handler, implode(';', $header) . ";\n");
+
+        if (!empty($writeData)) {
+            $headerLength = count($header);
+            foreach ($writeData as $line) {
+                $lineLength = count($line);
+                if ($headerLength > $lineLength) {
+                    for ($i = $lineLength; $i < $headerLength; $i++) {
+                        $line[] = '';
+                        $lineLength++;
+                    }
+                }
+
+                fwrite($handler, implode(';', $line) . ";\n");
+            }
+        }
     }
 
     /**
@@ -185,7 +213,7 @@ SQL;
         $mapping = $this->getHmMapping($articleIds);
 
         $data = array();
-        foreach($ids as $detailId => $detailArticleId) {
+        foreach ($ids as $detailId => $detailArticleId) {
             if (isset($mapping[$detailArticleId])) {
                 $data[$detailId] = $mapping[$detailArticleId];
                 unset($ids[$detailId]);
@@ -194,7 +222,7 @@ SQL;
 
         if (count($ids) > 0) {
             $mapping = $this->getSwMapping($articleIds);
-            foreach($ids as $detailId => $detailArticleId) {
+            foreach ($ids as $detailId => $detailArticleId) {
                 if (isset($mapping[$detailArticleId])) {
                     $data[$detailId] = $mapping[$detailArticleId];
                     unset($ids[$detailId]);
@@ -202,7 +230,7 @@ SQL;
             }
 
             if (count($ids) > 0) {
-                foreach($ids as $detailId => $detailArticleId) {
+                foreach ($ids as $detailId => $detailArticleId) {
                     $data[$detailId] = '';
                 }
             }
@@ -216,7 +244,7 @@ SQL;
      * @return array
      * @throws \Doctrine\DBAL\DBALException
      */
-    private function getHmMapping($articleIds)
+    private function getHmMapping(array $articleIds)
     {
         $sql = <<<SQL
 SELECT cro.articleID, GROUP_CONCAT(DISTINCT ca.hm_category_title SEPARATOR '~|~')
@@ -228,7 +256,7 @@ SQL;
 
         $stmt = $this->connection->executeQuery($sql, array($articleIds), array(Connection::PARAM_INT_ARRAY));
         $mapping = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
-        array_walk($mapping, function(&$value){
+        array_walk($mapping, function (&$value) {
             $items = explode('~|~', $value);
             $value = reset($items);
         });
@@ -236,7 +264,12 @@ SQL;
         return $mapping;
     }
 
-    private function getSwMapping($articleIds)
+    /**
+     * @param array $articleIds
+     * @return array
+     * @throws \Doctrine\DBAL\DBALException
+     */
+    private function getSwMapping(array $articleIds)
     {
         $sql = <<<SQL
 SELECT ac.articleID, GROUP_CONCAT(DISTINCT c.description SEPARATOR '~|~') AS name
@@ -248,11 +281,79 @@ SQL;
 
         $stmt = $this->connection->executeQuery($sql, array($articleIds), array(Connection::PARAM_INT_ARRAY));
         $mapping = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
-        array_walk($mapping, function(&$value){
+        array_walk($mapping, function (&$value) {
             $items = explode('~|~', $value);
             $value = reset($items);
         });
 
         return $mapping;
+    }
+
+    /**
+     * @param array $articleIds
+     * @return array
+     * @throws \Doctrine\DBAL\DBALException
+     */
+    private function getAttributes(array $articleIds)
+    {
+        $sql = <<<SQL
+SELECT cor.article_id, cg.name AS 'key', co.name AS 'value'
+FROM s_article_configurator_option_relations cor
+INNER JOIN s_article_configurator_options co ON (co.id = cor.option_id)
+INNER JOIN s_article_configurator_groups cg ON (cg.id = co.group_id)
+WHERE cor.article_id IN (?)
+SQL;
+        $stmt = $this->connection->executeQuery($sql, array($articleIds), array(Connection::PARAM_INT_ARRAY));
+        $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $keys = array();
+        $result = array();
+        foreach ($data as $item) {
+            if (!isset($result[$item['article_id']])) {
+                $result[$item['article_id']] = array();
+            }
+            $result[$item['article_id']][$item['key']] = $item['value'];
+            $keys[] = $item['key'];
+        }
+
+        return array($result, array_unique($keys));
+    }
+
+    /**
+     * @param array $articleIds
+     * @return array
+     * @throws \Doctrine\DBAL\DBALException
+     */
+    private function getPictures(array $articleIds)
+    {
+        $sql = <<<SQL
+SELECT im.article_detail_id, NULLIF(CONCAT_WS('.', imm.img, imm.extension), "")
+FROM s_articles_img im
+INNER JOIN s_articles_img imm ON (im.parent_id = imm.id)
+WHERE im.article_detail_id IN (?);
+SQL;
+        $stmt = $this->connection->executeQuery($sql, array($articleIds), array(Connection::PARAM_INT_ARRAY));
+        $pictures = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+
+        $notFound = array();
+        foreach ($articleIds as $articleId) {
+            if (!isset($pictures[$articleId])) {
+                $notFound[] = $articleId;
+            }
+        }
+
+        if (!empty($notFound)) {
+            $sql = <<<SQL
+SELECT d.id, NULLIF(CONCAT_WS('.', im.img, im.extension), "")
+FROM s_articles_details d
+LEFT JOIN s_articles_img im ON (im.articleID = d.articleID)
+WHERE d.id IN (?)
+SQL;
+
+            $stmt = $this->connection->executeQuery($sql, array($notFound), array(Connection::PARAM_INT_ARRAY));
+            $pictures += $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+        }
+
+        return $pictures;
     }
 }

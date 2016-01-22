@@ -134,7 +134,7 @@ class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
             return;
         }
 
-        $this->Response()->setHeader('Content-Disposition', sprintf('attachment; filename="%s"', basename($feedFile)));
+        //$this->Response()->setHeader('Content-Disposition', sprintf('attachment; filename="%s"', basename($feedFile)));
 
         $this->Response()->sendHeaders();
         readfile($feedFile);
