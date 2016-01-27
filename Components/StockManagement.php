@@ -290,7 +290,7 @@ class StockManagement
         }
 
         if ($tax = $detail->getArticle()->getTax()) {
-            $price = $price * (100 + $tax->getTax()) / 100;
+            $price = round($price * (100 + $tax->getTax()) / 100, 3);
         }
 
         return (int)($price * 100);
