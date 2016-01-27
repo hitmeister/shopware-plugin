@@ -110,6 +110,9 @@ class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
         $this->Response()->setBody($body);
     }
 
+    /**
+     * Export products
+     */
     public function exportAction()
     {
         if (!$this->Request()->getParam('plain')) {
@@ -134,10 +137,24 @@ class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
             return;
         }
 
-        //$this->Response()->setHeader('Content-Disposition', sprintf('attachment; filename="%s"', basename($feedFile)));
-
+        $this->Response()->setHeader('Content-Disposition', sprintf('attachment; filename="%s"', basename($feedFile)));
         $this->Response()->sendHeaders();
+
         readfile($feedFile);
+    }
+
+    /**
+     * Show versions info
+     */
+    public function versionAction()
+    {
+        /** @var Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap $plugin */
+        $plugin = Shopware()->Plugins()->get('Backend')->get('HitmeMarketplace');
+        $this->processResponse(200, json_encode([
+            'version_plugin' => $plugin->getVersion(),
+            'version_sw' => \Shopware::VERSION,
+            'version_php' => PHP_VERSION,
+        ]));
     }
 
     /**

@@ -4,7 +4,7 @@
     "en": "Hitmeister.de Online shopping portal"
   },
   "menu_label": "Hitmeister.de",
-  "currentVersion": "1.0.5",
+  "currentVersion": "1.0.6",
   "author": "Hitmeister GmbH",
   "copyright": "Copyright © 2015, Hitmeister GmbH",
   "license": "proprietary",
@@ -12,19 +12,21 @@
   "link": "https://www.hitmeister.de",
   "changelog": {
     "de": {
+      "1.0.6": "Add manufacturer and content volume to the product feed;",
       "1.0.5": "Update SDK to 0.1.1 version;",
-      "1.0.4": "DEV-2228 - Ein Problem mit den Produktdaten beheben;",
-      "1.0.3": "DEV-2228 - Ein Problem mit den Bestellbenachrichtigungen beheben;",
-      "1.0.2": "DEV-2228 - Hinzugefügt logs;",
-      "1.0.1": "DEV-2210 - Bugfix: Tabellen konnten nicht richtig eingestellt werden;",
-      "1.0.0": "Erstveröffentlichung"
+      "1.0.4": "Fix product data exporter;",
+      "1.0.3": "Fix and issue with order notifications;",
+      "1.0.2": "Added logs;",
+      "1.0.1": "Bugfix: Tables may not be configured correctly;",
+      "1.0.0": "First release"
     },
     "en": {
+      "1.0.6": "Add manufacturer and content volume to the product feed;",
       "1.0.5": "Update SDK to 0.1.1 version;",
-      "1.0.4": "DEV-2228 - Fix product data exporter;",
-      "1.0.3": "DEV-2228 - Fix and issue with order notifications;",
-      "1.0.2": "DEV-2228 - Added logs;",
-      "1.0.1": "DEV-2210 - Bugfix: Tables may not be configured correctly;",
+      "1.0.4": "Fix product data exporter;",
+      "1.0.3": "Fix and issue with order notifications;",
+      "1.0.2": "Added logs;",
+      "1.0.1": "Bugfix: Tables may not be configured correctly;",
       "1.0.0": "First release"
     }
   },

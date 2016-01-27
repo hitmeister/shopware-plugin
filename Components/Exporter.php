@@ -93,10 +93,17 @@ SELECT
 	CONCAT_WS(', ', a.name, v.variant_text) AS title,
 	a.description_long AS description,
 	a.description AS short_description,
-	d.suppliernumber AS mpn
+	d.suppliernumber AS mpn,
+	s.name AS manufacturer,
+	CASE WHEN u.unit IS NOT NULL
+       THEN CONCAT_WS(' ', IFNULL(d.purchaseunit, 1), u.unit)
+       ELSE ''
+    END AS content_volume
 FROM s_articles_details d
 INNER JOIN s_articles a ON (a.id = d.articleID)
 INNER JOIN s_articles_attributes da ON (da.articledetailsID = d.id AND da.articleID = a.id)
+INNER JOIN s_articles_supplier s ON (s.id = a.supplierID)
+LEFT JOIN s_core_units u ON (u.id = d.unitID)
 LEFT JOIN (
 	SELECT
 		cor.article_id,
@@ -109,12 +116,14 @@ LEFT JOIN (
 WHERE
 	(d.ean IS NOT NULL AND d.ean != '') AND
 	d.active = 1 AND
+	a.active = 1 AND
+	a.supplierID IS NOT NULL AND
 	(da.hm_status NOT IN ('%s') OR da.hm_status IS NULL)
 SQL;
 
         $sql = sprintf($sql, StockManagement::STATUS_BLOCKED);
 
-        $header = array('ean', 'title', 'description', 'short_description', 'picture', 'category', 'mpn');
+        $header = array('ean', 'title', 'description', 'short_description', 'picture', 'category', 'mpn', 'manufacturer', 'content_volume');
         $writeData = array();
 
         while (true) {
