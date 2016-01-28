@@ -282,7 +282,7 @@ class StockManagement
      */
     private function getPrice(Detail $detail)
     {
-        $q = sprintf('SELECT `price` FROM `s_articles_prices` WHERE `articledetailsID` = %d AND `from` = 1 ORDER BY `price` ASC LIMIT 1', $detail->getId());
+        $q = sprintf('SELECT `price` FROM `s_articles_prices` WHERE `articledetailsID` = %d AND `from` = 1 AND `pricegroup` = "EK" ORDER BY `price` ASC LIMIT 1', $detail->getId());
         $stmt = $this->connection->executeQuery($q);
 
         if (!($price = $stmt->fetchColumn(0))) {
@@ -290,9 +290,9 @@ class StockManagement
         }
 
         if ($tax = $detail->getArticle()->getTax()) {
-            $price = round($price * (100 + $tax->getTax()) / 100, 3);
+            $price = round((float)$price * (100 + (float)$tax->getTax()) / 100, 2);
         }
 
-        return (int)($price * 100);
+        return round($price * 100);
     }
 }

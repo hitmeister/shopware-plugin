@@ -114,7 +114,8 @@ LEFT JOIN (
 	GROUP BY cor.article_id
 ) v ON (v.article_id = d.id)
 WHERE
-	(d.ean IS NOT NULL AND d.ean != '') AND
+	d.ean IS NOT NULL AND
+	TRIM(d.ean) != '' AND
 	d.active = 1 AND
 	a.active = 1 AND
 	a.supplierID IS NOT NULL AND
