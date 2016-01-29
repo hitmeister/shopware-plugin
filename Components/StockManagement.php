@@ -67,6 +67,20 @@ class StockManagement
     public function syncByArticleDetails(Detail $detail, $forceNotFound = false)
     {
         $attr = $detail->getAttribute();
+
+        // For some reason there may be no attributes
+        if (!$attr) {
+            $detail->setAttribute(array(
+                'articleID' => $detail->getArticleId(),
+                'articledetailsID' => $detail->getId(),
+                'hm_status' => self::STATUS_NEW,
+            ));
+            $attr = $detail->getAttribute();
+
+            Shopware()->Models()->persist($attr);
+            Shopware()->Models()->flush();
+        }
+
         $hmUnitId = $attr->getHmUnitId();
 
         if ('' == $detail->getEan()) {

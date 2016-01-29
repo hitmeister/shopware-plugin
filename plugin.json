@@ -4,7 +4,7 @@
     "en": "Hitmeister.de Online shopping portal"
   },
   "menu_label": "Hitmeister.de",
-  "currentVersion": "1.0.8",
+  "currentVersion": "1.0.9",
   "author": "Hitmeister GmbH",
   "copyright": "Copyright © 2015, Hitmeister GmbH",
   "license": "proprietary",
@@ -12,6 +12,7 @@
   "link": "https://www.hitmeister.de",
   "changelog": {
     "de": {
+      "1.0.9": "Fix issue with missing attributes of article;",
       "1.0.8": "Improve products export and price compilation;",
       "1.0.7": "Fix unit price calculation;",
       "1.0.6": "Add manufacturer and content volume to the product feed;",
@@ -23,6 +24,7 @@
       "1.0.0": "First release"
     },
     "en": {
+      "1.0.9": "Fix issue with missing attributes of article;",
       "1.0.8": "Improve products export and price compilation;",
       "1.0.7": "Fix unit price calculation;",
       "1.0.6": "Add manufacturer and content volume to the product feed;",
