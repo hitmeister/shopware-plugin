@@ -41,12 +41,14 @@ class Form
             'label' => 'API: Client key',
             'description' => 'Diese Information finden Sie im Hitmeister Account unter Shopseinstellungen; API.',
             'required' => true,
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         $this->form->setElement('text', 'secretKey', array(
             'label' => 'API: Secret key',
             'description' => 'Diese Information finden Sie im Hitmeister-Account unter Shopseinstellungen; API.',
             'required' => true,
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         $this->form->setElement('text', 'apiUrl', array(
@@ -54,6 +56,7 @@ class Form
             'description' => 'Welche API Version nutzen Sie',
             'value' => 'https://www.hitmeister.de/api/v1/',
             'required' => true,
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         // Stock management
@@ -73,6 +76,7 @@ class Form
                 array(Constants::DELIVERY_TIME_G, 'Ships in 5-7 weeks'),
                 array(Constants::DELIVERY_TIME_I, 'Ships in 8-10 weeks'),
             ),
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         $this->form->setElement('select', 'defaultCondition', array(
@@ -87,6 +91,7 @@ class Form
                 array(Constants::CONDITION_USED_GOOD, Constants::CONDITION_USED_GOOD),
                 array(Constants::CONDITION_USED_ACCEPTABLE, Constants::CONDITION_USED_ACCEPTABLE),
             ),
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         // Order
@@ -97,6 +102,7 @@ class Form
             'required' => true,
             'value' => !empty($deliveryMethods) ? $deliveryMethods[0][0] : '',
             'store' => $deliveryMethods,
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         $paymentMethods = Shopware()->Db()->fetchAll('SELECT id, name FROM s_core_paymentmeans', array(), \PDO::FETCH_NUM);
@@ -106,6 +112,7 @@ class Form
             'required' => true,
             'value' => !empty($paymentMethods) ? $paymentMethods[0][0] : '',
             'store' => $paymentMethods,
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         $shops = Shopware()->Db()->fetchAll('SELECT id, name FROM s_core_shops', array(), \PDO::FETCH_NUM);
@@ -115,6 +122,7 @@ class Form
             'required' => true,
             'value' => !empty($shops) ? $shops[0][0] : '',
             'store' => $shops,
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         // Delivery
