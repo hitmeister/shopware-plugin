@@ -66,7 +66,6 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
         Callback::install($this->getVersion());
 
         return array('success' => true, 'invalidateCache' => array('backend', 'proxy'));
-
     }
 
     /**
