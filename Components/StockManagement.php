@@ -9,6 +9,9 @@ use Hitmeister\Component\Api\Transfers\Constants;
 use Hitmeister\Component\Api\Transfers\UnitAddTransfer;
 use Hitmeister\Component\Api\Transfers\UnitUpdateTransfer;
 use Shopware\Models\Article\Detail;
+use Shopware\CustomModels\HitmeMarketplace\Stock;
+use Shopware\Models\Shop\Shop;
+
 
 class StockManagement
 {
@@ -46,10 +49,11 @@ class StockManagement
 
     /**
      * @param int $id
+     * @param int $shopId
      */
-    public function blockByDetailId($id)
+    public function blockByDetailId($id, $shopId)
     {
-        $q = sprintf('SELECT `hm_unit_id` FROM `s_articles_attributes` WHERE `articledetailsID` = %d LIMIT 1', $id);
+        $q = sprintf('SELECT `unit_id` FROM `s_plugin_hitme_stock` WHERE `article_detail_id` = %d AND `shop_id` = %d LIMIT 1', $id, $shopId);
         $stmt = $this->connection->executeQuery($q);
         $hmUnitId = $stmt->fetchColumn(0);
 
@@ -61,64 +65,64 @@ class StockManagement
     /**
      * @param Detail $detail
      * @param bool $forceNotFound
+     * @param Stock $stock
+     * @param Shop $shop
      * @return bool
      * @throws \Exception
      */
-    public function syncByArticleDetails(Detail $detail, $forceNotFound = false)
+    public function syncByArticleDetails(Detail $detail, $forceNotFound = false, Stock $stock, Shop $shop)
     {
         $attr = $detail->getAttribute();
 
-        // For some reason there may be no attributes
-        if (!$attr) {
-            $detail->setAttribute(array(
-                'articleID' => $detail->getArticleId(),
-                'articledetailsID' => $detail->getId(),
-                'hm_status' => self::STATUS_NEW,
-            ));
-            $attr = $detail->getAttribute();
+        // For some reason there may be no stock object
+        if ($stock == null) {
+            $stock = new Stock();
+            $stock->setArticleDetailId($detail);
+            $stock->setShopId($shop);
+            $stock->setStatus(self::STATUS_NEW);
 
-            Shopware()->Models()->persist($attr);
-            Shopware()->Models()->flush();
+            Shopware()->Models()->persist($stock);
+            Shopware()->Models()->flush($stock);
         }
 
-        $hmUnitId = $attr->getHmUnitId();
+        $hmUnitId = $stock->getUnitId();
 
         if ('' == $detail->getEan()) {
             // Delete unit if it was here before
             if ($hmUnitId) {
-                $this->deleteUnit($hmUnitId, $detail);
+                $this->deleteUnit($stock);
             }
 
             // If article had non new status, clean it up
-            if (self::STATUS_NEW != $attr->getHmStatus()) {
-                $this->updateStatus($detail->getId(), self::STATUS_NEW);
+            if (self::STATUS_NEW != $stock->getStatus()) {
+                $this->updateStatus($stock, self::STATUS_NEW);
             }
 
             throw new \Exception('Ean is missing.');
         }
 
         // If user doesn't want sync
-        if (self::STATUS_BLOCKED == $attr->getHmStatus()) {
+        if (self::STATUS_BLOCKED == $stock->getStatus()) {
             if ($hmUnitId) {
-                $this->deleteUnit($hmUnitId, $detail);
+                $this->deleteUnit($stock);
             }
             return false;
         }
 
         // If article was not found on Hm before, lets skip it, and then check it again in couple of days
-        if (self::STATUS_NOT_FOUND == $attr->getHmStatus() && !$forceNotFound) {
-            $last = $attr->getHmLastAccessDate();
+        if (self::STATUS_NOT_FOUND == $stock->getStatus() && !$forceNotFound) {
+            $last = $stock->getLastAccessDate();
             if ($last && strtotime($last) > strtotime('-3 days')) {
                 return false;
             }
         }
 
         // Update last access date
-        $this->updateLastAccess($detail->getId());
+        $this->updateLastAccess($stock);
 
         // Delete if article is not active
         if (!$detail->getActive() && $hmUnitId) {
-            return $this->deleteUnit($hmUnitId, $detail);
+            return $this->deleteUnit($stock);
         }
 
         // Look for price
@@ -130,20 +134,20 @@ class StockManagement
         switch (true) {
             // Dummy
             case !$hmUnitId && !$inStock:
-                $this->updateStatus($detail->getId(), self::STATUS_SYNCHRONIZING);
+                $this->updateStatus($stock, self::STATUS_SYNCHRONIZING);
                 break;
 
             // Create stock
             case !$hmUnitId && $inStock:
-                return $this->postUnit($detail, $price);
+                return $this->postUnit($detail, $price, $stock);
 
             // Update stock
             case $hmUnitId && $inStock:
-                return $this->updateUnit($hmUnitId, $detail, $price);
+                return $this->updateUnit($hmUnitId, $detail, $price, $stock);
 
             // Delete from stock
             case $hmUnitId && !$inStock:
-                return $this->deleteUnit($hmUnitId, $detail);
+                return $this->deleteUnit($stock);
         }
 
         return true;
@@ -152,10 +156,11 @@ class StockManagement
     /**
      * @param Detail $detail
      * @param int $price
+     * @param Stock $stock
      * @return bool
      * @throws \Exception
      */
-    private function postUnit(Detail $detail, $price)
+    private function postUnit(Detail $detail, $price, Stock $stock)
     {
         $transfer = new UnitAddTransfer();
         $transfer->ean = $detail->getEan();
@@ -171,7 +176,7 @@ class StockManagement
             $hmUnitId = $this->apiClient->units()->post($transfer);
         } // Not possible to sell this item (EAN not found)
         catch (ResourceNotFoundException $e) {
-            $this->updateStatus($detail->getId(), self::STATUS_NOT_FOUND);
+            $this->updateStatus($stock, self::STATUS_NOT_FOUND);
             return false;
         }
 
@@ -179,12 +184,9 @@ class StockManagement
             throw new \Exception('Error on post article on Hitmeister. Got empty unit id.');
         }
 
-        // Perfect
-        $this->connection->update(
-            's_articles_attributes',
-            array('hm_unit_id' => $hmUnitId, 'hm_status' => self::STATUS_SYNCHRONIZING),
-            array('articledetailsID' => (int)$detail->getId())
-        );
+        $stock->setStatus(self::STATUS_SYNCHRONIZING);
+        $stock->setUnitId($hmUnitId);
+        Shopware()->Models()->flush($stock);
 
         return true;
     }
@@ -193,9 +195,10 @@ class StockManagement
      * @param string $hmUnitId
      * @param Detail $detail
      * @param int $price
+     * @param Stock $stock
      * @return bool
      */
-    private function updateUnit($hmUnitId, Detail $detail, $price)
+    private function updateUnit($hmUnitId, Detail $detail, $price, Stock $stock)
     {
         $transfer = new UnitUpdateTransfer();
         $transfer->condition = $this->defaultCondition;
@@ -210,50 +213,39 @@ class StockManagement
 
         // Not found, lets post it again
         if (false === $res) {
-            $res = $this->postUnit($detail, $price);
+            $res = $this->postUnit($detail, $price, $stock);
         }
 
         return $res;
     }
 
-    private function deleteUnit($hmUnitId, Detail $detail)
+    private function deleteUnit(Stock $stock)
     {
-        $res = $this->apiClient->units()->delete($hmUnitId);
+        $res = $this->apiClient->units()->delete($stock->getUnitId());
 
-        // Perfect
-        $this->connection->update(
-            's_articles_attributes',
-            array('hm_unit_id' => null),
-            array('articledetailsID' => (int)$detail->getId()),
-            array('hm_unit_id' => \PDO::PARAM_NULL)
-        );
+        Shopware()->Models()->remove($stock);
+        Shopware()->Models()->flush($stock);
 
         return $res;
     }
 
     /**
-     * @param int $id
+     * @param Stock $stock
      */
-    private function updateLastAccess($id)
+    private function updateLastAccess(Stock $stock)
     {
-        $this->connection->update(
-            's_articles_attributes',
-            array('hm_last_access_date' => date('Y-m-d H:i:s')),
-            array('articledetailsID' => (int)$id)
-        );
+        $stock->setLastAccessDate(date('Y-m-d H:i:s'));
+        Shopware()->Models()->flush($stock);
     }
 
     /**
-     * @param int $id
+     * @param Stock $stock
      * @param string $status
      */
-    private function updateStatus($id, $status)
+    private function updateStatus($stock, $status)
     {
-        $this->connection->update(
-            's_articles_attributes',
-            array('hm_status' => $status),
-            array('articledetailsID' => (int)$id)
-        );
+        $stock->setStatus($status);
+        Shopware()->Models()->flush($stock);
     }
 
     /**
@@ -309,4 +301,5 @@ class StockManagement
 
         return round($price * 100);
     }
+
 }

@@ -186,10 +186,6 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
                     'label' => 'Orders: Default payment method',
                     'description' => 'Bitte wählen Sie eine Bezahlmethode, die Ihrem System mitteilt, dass der Kauf bereits bezahlt ist, da Hitmeister die Zahlungsabwicklung für Sie übernimmt.',
                 ),
-                'defaultShop' => array(
-                    'label' => 'Orders: Default shop',
-                    'description' => 'Welcher Subshop soll mit Hitmeister.de verbunden werden?',
-                ),
                 'defaultCarrier' => array(
                     'label' => 'Shipping: Default carrier',
                     'description' => 'Welchen Versanddienstleister nutzen Sie?',

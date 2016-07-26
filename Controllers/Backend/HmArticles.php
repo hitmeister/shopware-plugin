@@ -1,6 +1,7 @@
 <?php
 
 use ShopwarePlugins\HitmeMarketplace\Components\StockManagement;
+use ShopwarePlugins\HitmeMarketplace\Components\Shop;
 
 class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backend_ExtJs
 {
@@ -33,13 +34,13 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
                     'CONCAT_WS(", ", a.name, v.variant_text) AS name',
                     'd.ean',
                     'd.instock',
-                    'da.hm_unit_id',
-                    'da.hm_last_access_date',
-                    'da.hm_status',
+                    'da.unit_id AS hm_unit_id',
+                    'da.last_access_date AS hm_last_access_date',
+                    'da.status AS hm_status',
                 ))
                 ->from('s_articles_details', 'd')
                 ->innerJoin('d', 's_articles', 'a', 'a.id = d.articleID')
-                ->innerJoin('d', 's_articles_attributes', 'da', 'da.articledetailsID = d.id AND da.articleID = a.id')
+                ->leftJoin('d', 's_plugin_hitme_stock', 'da', 'da.article_detail_id = d.id')
                 ->leftJoin('d', '(' . $joinBuilder->getSQL() . ')', 'v', 'v.article_id = d.id');
 
             $where = $builder
@@ -50,13 +51,50 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
                 $or = $builder->expr()->orX();
 
                 foreach ($filter as $item) {
-                    $prefix = ($item['property'] == 'name') ? 'a' : 'd';
-                    $or->add($prefix . '.' . $item['property'] . ' LIKE :' . $item['property']);
-                    $builder->setParameter(':' . $item['property'], '%' . $item['value'] . '%');
+                    if($item['property']=='shopId'){
+                        if(!empty($item['value'])){
+                            $shopId = (int) $item['value'];
+                            $shop = Shopware()->Models()->find("Shopware\\Models\\Shop\\Shop", $shopId );
+                            $categoryId = (int)$shop->getCategory()->getId();
+                        }
+                    }else{
+                        $prefix = ($item['property'] == 'name') ? 'a' : 'd';
+                        $or->add($prefix . '.' . $item['property'] . ' LIKE :' . $item['property']);
+                        $builder->setParameter(':' . $item['property'], '%' . $item['value'] . '%');
+                    }
                 }
 
-                $where->add($or);
+                if($or->count()){
+                    $where->add($or);
+                }
             }
+
+            $filterShopBuilder = Shopware()->Container()->get('dbal_connection')->createQueryBuilder();
+            $filterShopBuilder
+              ->select(array(
+                'cat.articleID',
+              ))
+              ->from('s_articles_categories_ro', 'cat')
+              ->groupBy('cat.articleID');
+
+            if($shop && !empty($categoryId)){
+                $filterShopBuilder->where('cat.categoryID = :filter_shop');
+                $builder->setParameter(':filter_shop', $categoryId);
+            }else{
+                $hmActiveShops = Shop::getActiveShops();
+                $hmActiveShopsCatIds = array_map(function ($item) {return $item['category_id'];}, $hmActiveShops);
+                if(count($hmActiveShopsCatIds)){
+                    $filterShopBuilder->where(
+                      $filterShopBuilder->expr()->in('cat.categoryID',implode(",", $hmActiveShopsCatIds))
+                    );
+                }else{
+                    throw new Exception("No Articles to sync");
+                }
+            }
+
+            $where->add(
+              $builder->expr()->in('d.articleID', $filterShopBuilder->getSQL())
+            );
 
             $builder->where($where);
 
@@ -103,29 +141,35 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
             return $this->View()->assign(array('success' => false, 'message' => 'Unexpected status value. Expecting new or blocked.'));
         }
 
+        $shopId = $this->Request()->getParam('shopId');
+        if (empty($shopId)) {
+            return $this->View()->assign(array('success' => false, 'message' => 'No shop id is passed!'));
+        }
+
         try {
             // Cleanup first
             if (StockManagement::STATUS_BLOCKED == $status) {
-                $this->getStockManagement()->blockByDetailId($detailsId);
+                $this->getStockManagement()->blockByDetailId($detailsId, $shopId);
             }
 
             /** @var \Doctrine\DBAL\Connection $connection */
             $connection = Shopware()->Container()->get('dbal_connection');
 
             // Then remove data
-            $connection->update('s_articles_attributes',
+            $connection->update('s_plugin_hitme_stock',
                 array(
-                    'hm_status' => $status,
-                    'hm_last_access_date' => null,
-                    'hm_unit_id' => null,
+                    'status' => $status,
+                    'last_access_date' => null,
+                    'unit_id' => null,
                 ),
                 array(
-                    'articledetailsID' => (int)$detailsId,
+                    'article_detail_id' => (int)$detailsId,
+                    'shop_id'           => (int)$shopId,
                 ),
                 array(
-                    'hm_status' => PDO::PARAM_STR,
-                    'hm_last_access_date' => PDO::PARAM_NULL,
-                    'hm_unit_id' => PDO::PARAM_NULL,
+                    'status' => PDO::PARAM_STR,
+                    'last_access_date' => PDO::PARAM_NULL,
+                    'unit_id' => PDO::PARAM_NULL,
                 )
             );
 
@@ -148,8 +192,32 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
             return $this->View()->assign(array('success' => false, 'message' => sprintf('Article details %d not found!', $detailsId)));
         }
 
+        $shopId = $this->Request()->getParam('shopId');
+        if (empty($shopId)) {
+            return $this->View()->assign(array('success' => false, 'message' => 'No shop id passed!'));
+        }
+
+        /** @var Shopware\Models\Shop\Shop $shop */
+        $shop = Shopware()->Models()->find('Shopware\Models\Shop\Shop', $shopId);
+        if (empty($shop)) {
+            return $this->View()->assign(array('success' => false, 'message' => sprintf('Shop %d not found!', $shopId)));
+        }
+
+        /** @var Shopware\CustomModels\HitmeMarketplace\Stock $stock */
+        $stockRepository = Shopware()->Models()->getRepository('Shopware\CustomModels\HitmeMarketplace\Stock');
+        $builder = $stockRepository->createQueryBuilder('Stock')
+          ->where('Stock.shopId = :shopId')
+          ->andWhere('Stock.articleDetailId = :articleDetailId');
+
+        $builder->setParameters(array(
+          'shopId'  => $shopId,
+          'articleDetailId' => $detail->getId()
+        ));
+
+        $stock = $builder->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_OBJECT);
+
         try {
-            $this->getStockManagement()->syncByArticleDetails($detail, true);
+            $this->getStockManagement()->syncByArticleDetails($detail, true, $stock, $shop);
 
             $this->View()->assign(array('success' => true));
         } catch (Exception $e) {
@@ -159,13 +227,23 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
 
     public function readyForSyncAction()
     {
-        $sql = "SELECT d.`id` FROM `s_articles_details` d LEFT JOIN `s_articles_attributes` a ON d.id = a.articledetailsID WHERE d.`ean` IS NOT NULL AND d.`ean` != '' AND (a.`hm_status` NOT IN ('%s') OR a.`hm_status` IS NULL )";
-        $query = sprintf($sql, StockManagement::STATUS_BLOCKED);
+        $shopId = $this->Request()->getParam('shopId');
+        if (empty($shopId)) {
+            return $this->View()->assign(array('success' => false, 'message' => 'No shop id passed!'));
+        }
+
+        /** @var Shopware\Models\Shop\Shop $shop */
+        $shop = Shopware()->Models()->find('Shopware\Models\Shop\Shop', $shopId);
+        if (empty($shop)) {
+            return $this->View()->assign(array('success' => false, 'message' => sprintf('Shop %d not found!', $shopId)));
+        }
+
+        $sql = "SELECT d.`id` FROM `s_articles_details` d LEFT JOIN `s_plugin_hitme_stock` a ON d.id = a.article_detail_id WHERE d.`ean` IS NOT NULL AND d.`ean` != '' AND (a.`status` NOT IN (?) OR a.`status` IS NULL ) AND d.articleID IN(SELECT cat.articleID FROM s_articles_categories_ro cat WHERE cat.categoryID = ? GROUP BY cat.articleID)";
 
         try {
             /** @var \Doctrine\DBAL\Connection $connection */
             $connection = Shopware()->Container()->get('dbal_connection');
-            $stmt = $connection->executeQuery($query);
+            $stmt = $connection->executeQuery($sql, array(StockManagement::STATUS_BLOCKED, $shop->getCategory()->getId()));
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             $this->View()->assign(array('success' => true, 'data' => $data));

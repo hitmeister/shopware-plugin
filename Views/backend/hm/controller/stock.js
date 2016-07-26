@@ -43,13 +43,15 @@ Ext.define('Shopware.apps.Hm.controller.Stock', {
 
     changeStatusById: function (id, status) {
         var me = this,
-            msg = Ext.MessageBox.wait('{s name=hm/stock/working}{/s}');
+            msg = Ext.MessageBox.wait('{s name=hm/stock/working}{/s}'),
+            shopId = me.getGrid().getShopFilterValue();
 
         Ext.Ajax.request({
             url: '{url controller=HmArticles action=changeStatusById}',
             params: {
                 id: id,
-                status: status
+                status: status,
+                shopId: shopId
             },
             callback: function (opts, success, response) {
                 msg.hide();
@@ -62,12 +64,14 @@ Ext.define('Shopware.apps.Hm.controller.Stock', {
     onSync: function (record) {
         var me = this,
             id = record.get('id'),
+            shopId = me.getGrid().getShopFilterValue(),
             msg = Ext.MessageBox.wait('{s name=hm/stock/working}{/s}');
 
         Ext.Ajax.request({
             url: '{url controller=HmArticles action=syncStockById}',
             params: {
-                id: id
+                id: id,
+                shopId: shopId
             },
             timeout: 60000,
             callback: function (opts, success, response) {
@@ -89,10 +93,14 @@ Ext.define('Shopware.apps.Hm.controller.Stock', {
 
     onSyncAll: function () {
         var me = this,
-            msg = Ext.MessageBox.wait('{s name=hm/stock/working}{/s}');
+            msg = Ext.MessageBox.wait('{s name=hm/stock/working}{/s}'),
+            shopId = me.getGrid().getShopFilterValue();
 
         Ext.Ajax.request({
             url: '{url controller=HmArticles action=readyForSync}',
+            params: {
+                shopId: shopId
+            },
             callback: function () {
                 msg.hide();
             },
@@ -127,10 +135,20 @@ Ext.define('Shopware.apps.Hm.controller.Stock', {
     },
 
     onBatchProcess: function (task, record, callback) {
+        var componentQuery = Ext.ComponentQuery.query('hm-stock-grid')
+            shopId,
+            hmStockGrid;
+
+        if(componentQuery[0]){
+            hmStockGrid = componentQuery[0];
+            shopId = hmStockGrid.getShopFilterValue();
+        }
+
         Ext.Ajax.request({
             url: '{url controller=HmArticles action=syncStockById}',
             params: {
-                id: record.id
+                id: record.id,
+                shopId: shopId
             },
             timeout: 60000,
             callback: function (opts, success, response) {
