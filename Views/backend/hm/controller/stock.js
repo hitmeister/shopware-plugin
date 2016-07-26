@@ -135,7 +135,7 @@ Ext.define('Shopware.apps.Hm.controller.Stock', {
     },
 
     onBatchProcess: function (task, record, callback) {
-        var componentQuery = Ext.ComponentQuery.query('hm-stock-grid')
+        var componentQuery = Ext.ComponentQuery.query('hm-stock-grid'),
             shopId,
             hmStockGrid;
 
