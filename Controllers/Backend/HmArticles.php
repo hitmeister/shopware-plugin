@@ -252,6 +252,48 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
         }
     }
 
+    public function changeStatusAllAction()
+    {
+        $shopId = $this->Request()->getParam('shopId');
+        if (empty($shopId)) {
+            return $this->View()->assign(array('success' => false, 'message' => 'No shop id is passed!'));
+        }
+
+        $status = $this->Request()->getParam('status');
+        if (!in_array($status, array(StockManagement::STATUS_NEW, StockManagement::STATUS_BLOCKED))) {
+            return $this->View()->assign(array('success' => false, 'message' => 'Unexpected status value. Expecting new or blocked.'));
+        }
+
+        try {
+            // Cleanup first
+            $this->getStockManagement()->flushInventory($shopId);
+
+            /** @var \Doctrine\DBAL\Connection $connection */
+            $connection = Shopware()->Container()->get('dbal_connection');
+
+            // Then update data
+            $connection->update('s_plugin_hitme_stock',
+              array(
+                'status' => $status,
+                'last_access_date' => null,
+                'unit_id' => null
+              ),
+              array(
+                'shop_id'           => (int)$shopId,
+              ),
+              array(
+                'status' => PDO::PARAM_STR,
+                'last_access_date' => PDO::PARAM_NULL,
+                'unit_id' => PDO::PARAM_NULL
+              )
+            );
+
+            $this->View()->assign(array('success' => true));
+        } catch (Exception $e) {
+            $this->View()->assign(array('success' => false, 'message' => $e->getMessage()));
+        }
+    }
+
     /**
      * @return StockManagement
      */

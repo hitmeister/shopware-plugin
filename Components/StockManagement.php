@@ -11,6 +11,7 @@ use Hitmeister\Component\Api\Transfers\UnitUpdateTransfer;
 use Shopware\Models\Article\Detail;
 use Shopware\CustomModels\HitmeMarketplace\Stock;
 use Shopware\Models\Shop\Shop;
+use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
 
 
 class StockManagement
@@ -60,6 +61,18 @@ class StockManagement
         if ($hmUnitId) {
             $this->apiClient->units()->delete($hmUnitId);
         }
+    }
+
+    /**
+     * @param int $shopId
+     */
+    public function flushInventory($shopId)
+    {
+        $shopConfig = HmShop::getShopConfigByShopId($shopId);
+        $basePath = 'http://' . $shopConfig->get('basePath');
+        $baseFile = $shopConfig->get('baseFile');
+        $url = $basePath . DIRECTORY_SEPARATOR . $baseFile . "?sViewport=Hm&sAction=flushCommand";
+        $this->apiClient->importFiles()->post($url);
     }
 
     /**
