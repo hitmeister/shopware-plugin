@@ -23,10 +23,14 @@ Ext.define('Shopware.apps.Hm.controller.Export', {
 
     onExport: function() {
         var me = this,
-            msg = Ext.MessageBox.wait('{s name=hm/export/working}{/s}');
+            msg = Ext.MessageBox.wait('{s name=hm/export/working}{/s}'),
+            shopId = me.getGrid().getShopFilterValue();
 
         Ext.Ajax.request({
             url: '{url controller=HmExports action=export}',
+            params: {
+                shopId: shopId
+            },
             callback: function(opts, success, response) {
                 msg.hide();
                 me.getGrid().getStore().reload();

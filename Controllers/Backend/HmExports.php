@@ -3,6 +3,7 @@
 use Hitmeister\Component\Api\Client;
 use Hitmeister\Component\Api\Transfers\Constants;
 use ShopwarePlugins\HitmeMarketplace\Components\Exporter;
+use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
 
 class Shopware_Controllers_Backend_HmExports extends Shopware_Controllers_Backend_ExtJs
 {
@@ -28,13 +29,15 @@ class Shopware_Controllers_Backend_HmExports extends Shopware_Controllers_Backen
 
     public function exportAction()
     {
-        $callback = $this->Front()->Router()
-            ->assemble(array(
-                'module' => 'frontend',
-                'controller' => 'hm',
-                'action' => 'export',
-                'id' => date('YmdHis'),
-            ));
+        $shopId = $this->Request()->getParam('shopId');
+        if (empty($shopId)) {
+            return $this->View()->assign(array('success' => false, 'message' => 'No shop id is passed!'));
+        }
+
+        $shopConfig = HmShop::getShopConfigByShopId($shopId);
+        $basePath = 'http://' . $shopConfig->get('basePath');
+        $baseFile = $shopConfig->get('baseFile');
+        $callback = $basePath . DIRECTORY_SEPARATOR . $baseFile . "?sViewport=Hm&sAction=export&id=" . date('YmdHis');
 
         try {
             $id = $this->getApiClient()->importFiles()->post($callback, Constants::TYPE_PRODUCT_FEED);

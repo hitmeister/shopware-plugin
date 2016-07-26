@@ -81,9 +81,14 @@ class Exporter
         /** @var \sSystem $system */
         $system = Shopware()->Bootstrap()->getResource('System');
         $imageDir = $system->sPathArticleImg;
+        $shop = Shopware()->Shop();
+        $shopId = $shop->getId();
+        $categoryId = $shop->getCategory()->getId();
 
         $limit = 100;
         $offset = 0;
+
+
 
         $sql = <<<SQL
 SELECT
@@ -101,8 +106,8 @@ SELECT
     END AS content_volume
 FROM s_articles_details d
 INNER JOIN s_articles a ON (a.id = d.articleID)
-INNER JOIN s_articles_attributes da ON (da.articledetailsID = d.id AND da.articleID = a.id)
 INNER JOIN s_articles_supplier s ON (s.id = a.supplierID)
+LEFT JOIN s_plugin_hitme_stock da ON (da.article_detail_id = d.id AND da.shop_id = ?)
 LEFT JOIN s_core_units u ON (u.id = d.unitID)
 LEFT JOIN (
 	SELECT
@@ -119,7 +124,8 @@ WHERE
 	d.active = 1 AND
 	a.active = 1 AND
 	a.supplierID IS NOT NULL AND
-	(da.hm_status NOT IN ('%s') OR da.hm_status IS NULL)
+	(da.status NOT IN ('%s') OR da.status IS NULL) AND
+	a.id IN (SELECT cat.articleID FROM s_articles_categories_ro cat WHERE cat.categoryID = ? GROUP BY cat.articleID)
 SQL;
 
         $sql = sprintf($sql, StockManagement::STATUS_BLOCKED);
@@ -128,7 +134,7 @@ SQL;
         $writeData = array();
 
         while (true) {
-            $stmt = $this->connection->executeQuery($sql . sprintf(' LIMIT %d,%d', $offset, $limit));
+            $stmt = $this->connection->executeQuery($sql . sprintf(' LIMIT %d,%d', $offset, $limit), array($shopId, $categoryId));
             $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             if (empty($data)) {
                 break;
