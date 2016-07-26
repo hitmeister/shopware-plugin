@@ -31,6 +31,12 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
         disabled: true
     }),
 
+    ButtonDeleteAll: Ext.create('Ext.button.Button', {
+        text: '{s name=hm/stock/grid/toolbar/button/delete_stock_listed}{/s}',
+        iconCls: 'sprite-minus-circle-frame',
+        disabled: true
+    }),
+
 
 
     initComponent: function () {
@@ -64,6 +70,7 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
             if(shopId){
                 me.ButtonSyncAll.enable();
                 me.ButtonBlockAll.enable();
+                me.ButtonDeleteAll.enable();
                 me.store.clearFilter(true);
                 me.store.filter([
                     { property: 'shopId', value: shopId }
@@ -71,6 +78,7 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
             }else{
                 me.ButtonSyncAll.disable();
                 me.ButtonBlockAll.disable();
+                me.ButtonDeleteAll.disable();
                 me.store.clearFilter();
             }
 
@@ -82,6 +90,10 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
 
         me.ButtonBlockAll.on('click', function(){
             me.fireEvent('block_all')
+        });
+
+        me.ButtonDeleteAll.on('click', function(){
+            me.fireEvent('delete_all')
         });
 
         me.callParent(arguments);
@@ -249,6 +261,7 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                 '-',
                 me.ButtonSyncAll,
                 me.ButtonBlockAll,
+                me.ButtonDeleteAll,
                 '->',
                 {
                     xtype: 'textfield',

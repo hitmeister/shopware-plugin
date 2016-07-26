@@ -19,6 +19,7 @@ Ext.define('Shopware.apps.Hm.controller.Stock', {
                 'sync': me.onSync,
                 'sync_all': me.onSyncAll,
                 'block_all': me.onBlockAll,
+                'delete_all': me.onDeleteAll
             }
         });
 
@@ -176,6 +177,13 @@ Ext.define('Shopware.apps.Hm.controller.Stock', {
     onBlockAll: function () {
         var me = this,
             status = me.getGrid().StatusBlocked;
+
+        me.changeStatusAll(status);
+    },
+
+    onDeleteAll: function () {
+        var me = this,
+            status = me.getGrid().StatusNew;
 
         me.changeStatusAll(status);
     },
