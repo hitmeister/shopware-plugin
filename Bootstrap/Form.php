@@ -115,16 +115,6 @@ class Form
             'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
-        $shops = Shopware()->Db()->fetchAll('SELECT id, name FROM s_core_shops', array(), \PDO::FETCH_NUM);
-        $this->form->setElement('select', 'defaultShop', array(
-            'label' => 'Orders: Default shop',
-            'description' => 'Welcher Subshop soll mit Hitmeister.de verbunden werden?',
-            'required' => true,
-            'value' => !empty($shops) ? $shops[0][0] : '',
-            'store' => $shops,
-            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
-        ));
-
         // Delivery
         $this->form->setElement('select', 'defaultCarrier', array(
             'label' => 'Shipping: Default carrier',
@@ -157,6 +147,7 @@ class Form
                 array(Constants::CARRIER_CODE_TRANS_O_FLEX, Constants::CARRIER_CODE_TRANS_O_FLEX),
                 array(Constants::CARRIER_CODE_UPS, Constants::CARRIER_CODE_UPS),
             ),
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
     }
 
