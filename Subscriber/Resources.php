@@ -8,6 +8,7 @@ use ShopwarePlugins\HitmeMarketplace\Components\CategoryFetcher;
 use ShopwarePlugins\HitmeMarketplace\Components\Exporter;
 use ShopwarePlugins\HitmeMarketplace\Components\Ordering;
 use ShopwarePlugins\HitmeMarketplace\Components\StockManagement;
+use ShopwarePlugins\HitmeMarketplace\Components\Shop;
 
 class Resources implements SubscriberInterface
 {
@@ -41,12 +42,23 @@ class Resources implements SubscriberInterface
      */
     public function onInitApi()
     {
+        $shopConfig = $this->config;
+        if(Shopware()->Front()->Request()->has('shopId')){
+            $shopId = (int)Shopware()->Front()->Request()->getParam('shopId');
+            if(!empty($shopId)){
+                $shopConfig = Shop::getShopConfigByShopId($shopId);
+            }
+        }
+        $apiUrl = $shopConfig->get('apiUrl');
+        $clientKey = $shopConfig->get('clientKey');
+        $secretKey = $shopConfig->get('secretKey');
+
         $builder = new ClientBuilder();
         $builder
             ->setLogger(Shopware()->Container()->get('pluginlogger'))
-            ->setBaseUrl($this->config->get('apiUrl'))
-            ->setClientKey($this->config->get('clientKey'))
-            ->setClientSecret($this->config->get('secretKey'));
+            ->setBaseUrl($apiUrl)
+            ->setClientKey($clientKey)
+            ->setClientSecret($secretKey);
 
         return $builder->build();
     }
@@ -100,7 +112,7 @@ class Resources implements SubscriberInterface
             Shopware()->Container()->get('HmApi'),
             $this->config->get('defaultDeliveryMethod'),
             $this->config->get('defaultPaymentMethod'),
-            $this->config->get('defaultShop')
+            Shopware()->Shop()
         );
     }
 }
