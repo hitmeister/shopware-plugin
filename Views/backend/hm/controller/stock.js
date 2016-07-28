@@ -17,7 +17,9 @@ Ext.define('Shopware.apps.Hm.controller.Stock', {
                 'unblock': me.onUnBlock,
                 'block': me.onBlock,
                 'sync': me.onSync,
-                'sync_all': me.onSyncAll
+                'sync_all': me.onSyncAll,
+                'block_all': me.onBlockAll,
+                'delete_all': me.onDeleteAll
             }
         });
 
@@ -168,6 +170,39 @@ Ext.define('Shopware.apps.Hm.controller.Stock', {
                         url: 'syncStockById/'+record.id
                     }
                 });
+            }
+        });
+    },
+
+    onBlockAll: function () {
+        var me = this,
+            status = me.getGrid().StatusBlocked;
+
+        me.changeStatusAll(status);
+    },
+
+    onDeleteAll: function () {
+        var me = this,
+            status = me.getGrid().StatusNew;
+
+        me.changeStatusAll(status);
+    },
+
+    changeStatusAll: function (status){
+        var me = this,
+            msg = Ext.MessageBox.wait('{s name=hm/stock/working}{/s}'),
+            shopId = me.getGrid().getShopFilterValue();
+
+        Ext.Ajax.request({
+            url: '{url controller=HmArticles action=changeStatusAll}',
+            params: {
+                shopId: shopId,
+                status: status
+            },
+            callback: function (opts, success, response) {
+                msg.hide();
+                me.getGrid().getStore().reload();
+                me.riseMessage(success, response);
             }
         });
     }

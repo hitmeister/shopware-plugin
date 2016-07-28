@@ -25,6 +25,18 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
         disabled: true
     }),
 
+    ButtonBlockAll: Ext.create('Ext.button.Button', {
+        text: '{s name=hm/stock/grid/toolbar/button/stop_sync_stock_listed}{/s}',
+        iconCls: 'sprite-cross-circle',
+        disabled: true
+    }),
+
+    ButtonDeleteAll: Ext.create('Ext.button.Button', {
+        text: '{s name=hm/stock/grid/toolbar/button/delete_stock_listed}{/s}',
+        iconCls: 'sprite-minus-circle-frame',
+        disabled: true
+    }),
+
 
 
     initComponent: function () {
@@ -43,7 +55,7 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
             }
         };
 
-        me.addEvents('block', 'unblock', 'sync', 'sync_all', 'sync_stop');
+        me.addEvents('block', 'unblock', 'sync', 'sync_all', 'block_all', 'delete_all');
 
         me.store = Ext.create('Shopware.apps.Hm.store.Stock');
         me.columns = me.getCreateColumns();
@@ -57,12 +69,16 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
             shopId = me.getShopFilterValue();
             if(shopId){
                 me.ButtonSyncAll.enable();
+                me.ButtonBlockAll.enable();
+                me.ButtonDeleteAll.enable();
                 me.store.clearFilter(true);
                 me.store.filter([
                     { property: 'shopId', value: shopId }
                 ]);
             }else{
                 me.ButtonSyncAll.disable();
+                me.ButtonBlockAll.disable();
+                me.ButtonDeleteAll.disable();
                 me.store.clearFilter();
             }
 
@@ -70,6 +86,14 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
 
         me.ButtonSyncAll.on('click', function(field, value){
             me.fireEvent('sync_all')
+        });
+
+        me.ButtonBlockAll.on('click', function(){
+            me.fireEvent('block_all')
+        });
+
+        me.ButtonDeleteAll.on('click', function(){
+            me.fireEvent('delete_all')
         });
 
         me.callParent(arguments);
@@ -181,7 +205,7 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                         }
                     },
                     {
-                        iconCls: 'sprite-minus-circle-frame',
+                        iconCls: 'sprite-cross-circle',
                         tooltip: '{s name=hm/stock/grid/column/options/block/title}{/s}',
                         handler: function (grid, rowIndex) {
                             var record = grid.getStore().getAt(rowIndex);
@@ -236,14 +260,8 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                 me.ShopFilter,
                 '-',
                 me.ButtonSyncAll,
-                {
-                    xtype: 'button',
-                    text: '{s name=hm/stock/grid/toolbar/button/sync_stock_listed}{/s}',
-                    iconCls: 'sprite-arrow-circle-045-left',
-                    handler: function () {
-                        me.fireEvent('sync_all')
-                    }
-                },
+                me.ButtonBlockAll,
+                me.ButtonDeleteAll,
                 '->',
                 {
                     xtype: 'textfield',
