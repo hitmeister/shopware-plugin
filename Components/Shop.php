@@ -50,4 +50,33 @@ class Shop
         return $subshopConfig;
     }
 
+    /*
+     * @param int $shopId
+     * @param bool $withBaseFile
+     * @return string
+     */
+    public static function getShopUrl($shopId, $withBaseFile = false)
+    {
+        $shopConfig = self::getShopConfigByShopId($shopId);
+        /* @var $shop \Shopware\Models\Shop\Shop */
+        $shop = Shopware()->Models()->find("Shopware\\Models\\Shop\\Shop", $shopId );
+        $host = $shop->getMain() !== null ? $shop->getMain()->getHost() : $shop->getHost();
+        $basePath = $shop->getMain() !== null ? $shop->getMain()->getBasePath() : $shop->getBasePath();
+        $baseUrl = $shop->getBaseUrl();
+
+        $shopUrl = 'http://' . $host;
+        if(!empty($baseUrl)){
+            $shopUrl .= $baseUrl;
+        }elseif(!empty($basePath)){
+            $shopUrl .= $basePath;
+        }
+
+        $baseFile = $shopConfig->get('baseFile');
+        $shopUrl .= DIRECTORY_SEPARATOR;
+        $shopUrl .= $withBaseFile ? $baseFile : '';
+
+        return $shopUrl;
+
+    }
+
 }

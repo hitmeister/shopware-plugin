@@ -26,10 +26,14 @@ Ext.define('Shopware.apps.Hm.controller.Notification', {
 
     onEnableAll: function() {
         var me = this,
-            msg = Ext.MessageBox.wait('{s name=hm/notifications/working}Working...{/s}');
+            msg = Ext.MessageBox.wait('{s name=hm/notifications/working}Working...{/s}'),
+            shopId = me.getGrid().getShopFilterValue();
 
         Ext.Ajax.request({
             url: '{url controller=HmNotifications action=enableAll}',
+            params: {
+                shopId: shopId
+            },
             callback: function(opts, success, response) {
                 msg.hide();
                 me.getGrid().getStore().reload();
@@ -40,10 +44,22 @@ Ext.define('Shopware.apps.Hm.controller.Notification', {
 
     onDisableAll: function() {
         var me = this,
-            msg = Ext.MessageBox.wait('{s name=hm/notifications/working}Working...{/s}');
+            msg = Ext.MessageBox.wait('{s name=hm/notifications/working}Working...{/s}'),
+            shopId = me.getGrid().getShopFilterValue();
 
         Ext.Ajax.request({
             url: '{url controller=HmNotifications action=disableAll}',
+            params: {
+                shopId: shopId
+            },
+            callback: function(opts, success, response) {
+                msg.hide();
+                me.getGrid().getStore().reload();
+                me.riseMessage(success, response);
+            }
+        });
+    },
+
             callback: function(opts, success, response) {
                 msg.hide();
                 me.getGrid().getStore().reload();
@@ -68,13 +84,15 @@ Ext.define('Shopware.apps.Hm.controller.Notification', {
 
     changeStatusById: function(id, status) {
         var me = this,
-            msg = Ext.MessageBox.wait('{s name=hm/notifications/working}Working...{/s}');
+            msg = Ext.MessageBox.wait('{s name=hm/notifications/working}Working...{/s}'),
+            shopId = me.getGrid().getShopFilterValue();;
 
         Ext.Ajax.request({
             url: '{url controller=HmNotifications action=changeStatusById}',
             params: {
                 id: id,
-                status: status
+                status: status,
+                shopId: shopId
             },
             callback: function(opts, success, response) {
                 msg.hide();

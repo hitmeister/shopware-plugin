@@ -2,6 +2,7 @@
 
 use Hitmeister\Component\Api\Client;
 use Hitmeister\Component\Api\Transfers\Constants;
+use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
 
 class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_Backend_ExtJs
 {
@@ -30,6 +31,11 @@ class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_
             return $this->View()->assign(array('success' => false, 'message' => 'No notification id passed!'));
         }
 
+        $shopId = $this->Request()->getParam('shopId');
+        if (empty($shopId)) {
+            return $this->View()->assign(array('success' => false, 'message' => 'No shop id is passed!'));
+        }
+
         $status = $this->Request()->getParam('status', 0);
 
         try {
@@ -42,6 +48,11 @@ class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_
 
     public function enableAllAction()
     {
+        $shopId = $this->Request()->getParam('shopId');
+        if (empty($shopId)) {
+            return $this->View()->assign(array('success' => false, 'message' => 'No shop id is passed!'));
+        }
+
         try {
             $cursor = $this->getApiClient()
                 ->subscriptions()
@@ -56,7 +67,7 @@ class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_
                 $exclude[] = $subscription->event_name;
             }
 
-            $this->subscribeToAll($exclude);
+            $this->subscribeToAll($exclude, $shopId);
 
             $this->View()->assign(array('success' => true));
         } catch (Exception $e) {
@@ -66,6 +77,11 @@ class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_
 
     public function disableAllAction()
     {
+        $shopId = $this->Request()->getParam('shopId');
+        if (empty($shopId)) {
+            return $this->View()->assign(array('success' => false, 'message' => 'No shop id is passed!'));
+        }
+
         try {
             $cursor = $this->getApiClient()
                 ->subscriptions()
@@ -85,9 +101,10 @@ class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_
 
     /**
      * @param array $excludeNames
+     * @param int $shopId
      * @return bool
      */
-    private function subscribeToAll($excludeNames = array())
+    private function subscribeToAll($excludeNames = array(), $shopId)
     {
         $listEvents = array(
             Constants::EVENT_NAME_ORDER_NEW,
@@ -95,12 +112,8 @@ class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_
             Constants::EVENT_NAME_ORDER_UNIT_STATUS_CHANGED,
         );
 
-        $callback = $this->Front()->Router()
-            ->assemble(array(
-                'module' => 'frontend',
-                'controller' => 'hm',
-                'action' => 'notifications'
-            ));
+        $shopUrl = HmShop::getShopUrl($shopId);
+        $callback = $shopUrl . "Hm/notifications";
 
         /** @var \Shopware_Components_Config $config */
         $config = $this->get('config');
