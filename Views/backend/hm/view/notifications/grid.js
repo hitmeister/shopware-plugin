@@ -22,10 +22,15 @@ Ext.define('Shopware.apps.Hm.view.notifications.Grid', {
         iconCls: 'sprite-minus-circle-frame'
     }),
 
+    ButtonResetAll: Ext.create('Ext.button.Button', {
+        text: '{s name=hm/notifications/grid/toolbar/button/reset_all}{/s}',
+        iconCls: 'sprite-arrow-circle-135'
+    }),
+
     initComponent: function () {
         var me = this;
 
-        me.addEvents('enable_all', 'disable_all', 'enable', 'disable');
+        me.addEvents('enable_all', 'disable_all', 'enable', 'disable', 'reset_all');
 
         me.store = Ext.create('Shopware.apps.Hm.store.Notification');
         me.columns = me.getCreateColumns();
@@ -45,9 +50,11 @@ Ext.define('Shopware.apps.Hm.view.notifications.Grid', {
             if(shopId){
                 me.ButtonEnableAll.enable();
                 me.ButtonDisableAll.enable();
+                me.ButtonResetAll.enable();
             }else{
                 me.ButtonEnableAll.disable();
                 me.ButtonDisableAll.disable();
+                me.ButtonResetAll.disable();
             }
             me.setGridStoreShopFilter();
 
@@ -59,6 +66,10 @@ Ext.define('Shopware.apps.Hm.view.notifications.Grid', {
 
         me.ButtonDisableAll.on('click', function(){
             me.fireEvent('disable_all')
+        });
+
+        me.ButtonResetAll.on('click', function(){
+            me.fireEvent('reset_all')
         });
 
         me.callParent(arguments);
@@ -158,6 +169,7 @@ Ext.define('Shopware.apps.Hm.view.notifications.Grid', {
                 '-',
                 me.ButtonEnableAll,
                 me.ButtonDisableAll,
+                me.ButtonResetAll
             ]
         };
     },

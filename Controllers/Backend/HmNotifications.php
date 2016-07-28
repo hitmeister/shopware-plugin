@@ -99,6 +99,30 @@ class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_
         }
     }
 
+    public function resetAllAction()
+    {
+        $shopId = $this->Request()->getParam('shopId');
+        if (empty($shopId)) {
+            return $this->View()->assign(array('success' => false, 'message' => 'No shop id is passed!'));
+        }
+
+        try {
+            $cursor = $this->getApiClient()
+              ->subscriptions()
+              ->find();
+
+            foreach ($cursor as $subscription) {
+                $this->deleteById($subscription->id_subscription);
+            }
+
+            $this->subscribeToAll(array(), $shopId);
+
+            $this->View()->assign(array('success' => true));
+        } catch (Exception $e) {
+            $this->View()->assign(array('success' => false, 'message' => $e->getMessage()));
+        }
+    }
+
     /**
      * @param array $excludeNames
      * @param int $shopId
@@ -143,6 +167,15 @@ class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_
     private function disableById($hmId)
     {
         return $this->getApiClient()->subscriptions()->update($hmId, null, null, null, false);
+    }
+
+    /**
+     * @param int $hmId
+     * @return bool
+     */
+    private function deleteById($hmId)
+    {
+        return $this->getApiClient()->subscriptions()->delete($hmId);
     }
 
     /**
