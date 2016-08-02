@@ -4,6 +4,7 @@ Ext.define('Shopware.apps.Hm.model.local.Shop', {
     fields: [
         { name: 'id', type: 'int', useNull: true },
         { name: 'name', type: 'string' },
+        { name: 'category_id', type: 'int' },
     ],
     proxy: {
         type: 'ajax',

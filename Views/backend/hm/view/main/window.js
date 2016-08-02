@@ -30,6 +30,9 @@ Ext.define('Shopware.apps.Hm.view.main.Window', {
                     xtype: 'hm-stock-panel'
                 },
                 {
+                    xtype: 'hm-shippinggroup-panel'
+                },
+                {
                     xtype: 'hm-category-panel'
                 },
                 {

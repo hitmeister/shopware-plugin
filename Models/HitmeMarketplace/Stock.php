@@ -45,6 +45,12 @@ class Stock extends ModelEntity
     protected $status;
 
     /**
+     *
+     * @ORM\Column(name="shippinggroup", length=255, type="string", nullable=true)
+     */
+    protected $shippinggroup;
+
+    /**
      * @return mixed
      */
     public function getShopId()
@@ -123,6 +129,24 @@ class Stock extends ModelEntity
     {
         $this->status = $status;
     }
+
+    /**
+     * @return mixed
+     */
+    public function getShippinggroup()
+    {
+        return $this->shippinggroup;
+    }
+
+    /**
+     * @param mixed $shippinggroup
+     */
+    public function setShippinggroup($shippinggroup)
+    {
+        $this->shippinggroup = $shippinggroup;
+    }
+
+
 
 
 }

@@ -25,7 +25,7 @@ class Shop
                   'id' => $shop->getId(),
                   'name' => $shop->getName(),
                   'category_id' => $shop->getCategory()->getId(),
-                  'hm_config' => $shopConfig->toArray()
+                  'hm_config' => $shopConfig
                 );
             }
         }

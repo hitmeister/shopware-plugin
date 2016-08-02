@@ -7,6 +7,7 @@ Ext.define('Shopware.apps.Hm', {
     controllers: [
         'Main',
         'Stock',
+        'Shippinggroup',
         'Category',
         'Export',
         'Notification'
@@ -14,22 +15,30 @@ Ext.define('Shopware.apps.Hm', {
 
     stores: [
         'Stock',
+        'Shippinggroup',
+        'Shippinggrouptree',
         'Export',
         'Notification'
     ],
 
     models: [
         'local.Stock',
+        'local.Shippinggroup',
+        'local.Shippinggrouptree',
         'local.Tree',
         'hm.Tree',
         'hm.Export',
-        'hm.Notification'
+        'hm.Notification',
+        'hm.Shippinggroup'
     ],
 
     views: [
         'main.Window',
         'stock.Grid',
         'stock.Panel',
+        'shippinggroup.Grid',
+        'shippinggroup.Panel',
+        'shippinggroup.Tree',
         'category.Panel',
         'category.local.Tree',
         'category.hm.Tree',

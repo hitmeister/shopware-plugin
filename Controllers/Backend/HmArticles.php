@@ -36,11 +36,10 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
                     'd.instock',
                     'da.unit_id AS hm_unit_id',
                     'da.last_access_date AS hm_last_access_date',
-                    'da.status AS hm_status',
+                    'da.status AS hm_status'
                 ))
                 ->from('s_articles_details', 'd')
                 ->innerJoin('d', 's_articles', 'a', 'a.id = d.articleID')
-                ->leftJoin('d', 's_plugin_hitme_stock', 'da', 'da.article_detail_id = d.id')
                 ->leftJoin('d', '(' . $joinBuilder->getSQL() . ')', 'v', 'v.article_id = d.id');
 
             $where = $builder
@@ -51,11 +50,15 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
                 $or = $builder->expr()->orX();
 
                 foreach ($filter as $item) {
-                    if($item['property']=='shopId'){
-                        if(!empty($item['value'])){
-                            $shopId = (int) $item['value'];
-                            $shop = Shopware()->Models()->find("Shopware\\Models\\Shop\\Shop", $shopId );
-                            $categoryId = (int)$shop->getCategory()->getId();
+                    if($item['property']=='categoryId'){
+                        $categoryId = (int)$item['value'];
+                    }elseif($item['property']=='shopId') {
+                        if (!empty($item['value'])) {
+                            $shopId = (int)$item['value'];
+                            $shop = Shopware()->Models()->find("Shopware\\Models\\Shop\\Shop", $shopId);
+                            if(!$categoryId){
+                                $categoryId = (int)$shop->getCategory()->getId();
+                            }
                         }
                     }else{
                         $prefix = ($item['property'] == 'name') ? 'a' : 'd';
@@ -69,6 +72,25 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
                 }
             }
 
+            if(!empty($shopId)){
+                $shopConfig = Shop::getShopConfigByShopId($shopId);
+                $shippingGroup = $shopConfig->get('defaultShippingGroup');
+                $builder
+                  ->addSelect('CASE WHEN da.shippinggroup IS NOT NULL
+                    THEN da.shippinggroup
+                    ELSE :default_shippinggroup
+                    END AS hm_shippinggroup'
+                  )
+                  ->leftJoin('d', 's_plugin_hitme_stock', 'da', 'da.article_detail_id = d.id AND da.shop_id = :join_shop_id');
+                $builder->setParameter(':default_shippinggroup', $shippingGroup);
+                $builder->setParameter(':join_shop_id', $shopId);
+            }else{
+                $builder
+                  ->addSelect('da.shippinggroup AS hm_shippinggroup')
+                  ->leftJoin('d', 's_plugin_hitme_stock', 'da', 'da.article_detail_id = d.id');
+            }
+
+
             $filterShopBuilder = Shopware()->Container()->get('dbal_connection')->createQueryBuilder();
             $filterShopBuilder
               ->select(array(
@@ -77,7 +99,7 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
               ->from('s_articles_categories_ro', 'cat')
               ->groupBy('cat.articleID');
 
-            if($shop && !empty($categoryId)){
+            if(!empty($categoryId)){
                 $filterShopBuilder->where('cat.categoryID = :filter_shop');
                 $builder->setParameter(':filter_shop', $categoryId);
             }else{
@@ -173,6 +195,53 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
                 )
             );
 
+            $this->View()->assign(array('success' => true));
+        } catch (Exception $e) {
+            $this->View()->assign(array('success' => false, 'message' => $e->getMessage()));
+        }
+    }
+
+    public function changeShippinggroupByIdAction()
+    {
+        $detailsId = $this->Request()->getParam('id', null);
+        if (empty($detailsId)) {
+            return $this->View()->assign(array('success' => false, 'message' => 'No article details id passed!'));
+        }
+
+        /** @var Shopware\Models\Article\Detail $detail */
+        $detail = Shopware()->Models()->find('Shopware\Models\Article\Detail', $detailsId);
+        if (empty($detail)) {
+            return $this->View()->assign(array('success' => false, 'message' => sprintf('Article details %d not found!', $detailsId)));
+        }
+
+        $shopId = $this->Request()->getParam('shopId');
+        if (empty($shopId)) {
+            return $this->View()->assign(array('success' => false, 'message' => 'No shop id is passed!'));
+        }
+
+        /** @var Shopware\Models\Shop\Shop $shop */
+        $shop = Shopware()->Models()->find('Shopware\Models\Shop\Shop', $shopId);
+        if (empty($shop)) {
+            return $this->View()->assign(array('success' => false, 'message' => sprintf('Shop %d not found!', $shopId)));
+        }
+
+        /** @var Shopware\CustomModels\HitmeMarketplace\Stock $stock */
+        $stockRepository = Shopware()->Models()->getRepository('Shopware\CustomModels\HitmeMarketplace\Stock');
+        $builder = $stockRepository->createQueryBuilder('Stock')
+          ->where('Stock.shopId = :shopId')
+          ->andWhere('Stock.articleDetailId = :articleDetailId');
+
+        $builder->setParameters(array(
+          'shopId'  => $shopId,
+          'articleDetailId' => $detail->getId()
+        ));
+
+        $stock = $builder->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_OBJECT);
+
+        $shippinggroup = $this->Request()->getParam('shippinggroup');
+
+        try {
+            $this->getStockManagement()->updateShippinggroup($detail, $stock, $shop, $shippinggroup);
             $this->View()->assign(array('success' => true));
         } catch (Exception $e) {
             $this->View()->assign(array('success' => false, 'message' => $e->getMessage()));

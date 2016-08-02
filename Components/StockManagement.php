@@ -166,6 +166,7 @@ class StockManagement
         return true;
     }
 
+
     /**
      * @param Detail $detail
      * @param int $price
@@ -184,6 +185,7 @@ class StockManagement
         $transfer->id_offer = $detail->getNumber();
         $transfer->note = $detail->getAdditionalText();
         $transfer->delivery_time = $this->getDeliveryTimeByDays($detail->getShippingTime());
+        $transfer->shipping_group = $this->getShippingGroup($stock);
 
         try {
             $hmUnitId = $this->apiClient->units()->post($transfer);
@@ -221,6 +223,7 @@ class StockManagement
         $transfer->id_offer = $detail->getNumber();
         $transfer->note = $detail->getAdditionalText();
         $transfer->delivery_time = $this->getDeliveryTimeByDays($detail->getShippingTime());
+        $transfer->shipping_group = $this->getShippingGroup($stock);
 
         $res = $this->apiClient->units()->update($hmUnitId, $transfer);
 
@@ -240,6 +243,32 @@ class StockManagement
         Shopware()->Models()->flush($stock);
 
         return $res;
+    }
+
+    /**
+     * @param Detail $detail
+     * @param Stock $stock
+     * @param Shop $shop
+     * @param string $shippinggroup
+     * @return bool
+     * @throws \Exception
+     */
+    public function updateShippinggroup(Detail $detail, Stock $stock, Shop $shop, $shippinggroup)
+    {
+        // For some reason there may be no stock object
+        if ($stock == null) {
+            $stock = new Stock();
+            $stock->setArticleDetailId($detail);
+            $stock->setShopId($shop);
+            $stock->setShippinggroup($shippinggroup);
+            Shopware()->Models()->persist($stock);
+        }else{
+            $stock->setShippinggroup($shippinggroup);
+
+        }
+        Shopware()->Models()->flush($stock);
+
+        return true;
     }
 
     /**
@@ -313,6 +342,17 @@ class StockManagement
         }
 
         return round($price * 100);
+    }
+
+    private function getShippingGroup(Stock $stock)
+    {
+        $shippingGroup = $stock->getShippinggroup();
+        if(empty($shippingGroup)){
+            $shopConfig = HmShop::getShopConfigByShopId($stock->getShopId());
+            $shippingGroup = $shopConfig->get('defaultShippingGroup');
+        }
+
+        return $shippingGroup;
     }
 
 }

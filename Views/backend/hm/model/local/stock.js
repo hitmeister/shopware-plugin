@@ -9,7 +9,8 @@ Ext.define('Shopware.apps.Hm.model.local.Stock', {
         { name: 'name', type: 'string' },
         { name: 'hm_unit_id', type: 'string', useNull: true },
         { name: 'hm_last_access_date', type: 'date', useNull: true },
-        { name: 'hm_status', type: 'string', useNull: false }
+        { name: 'hm_status', type: 'string', useNull: false },
+        { name: 'hm_shippinggroup', type: 'string', useNull: true },
     ],
     proxy: {
         type: 'ajax',

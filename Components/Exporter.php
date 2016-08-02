@@ -3,6 +3,7 @@
 namespace ShopwarePlugins\HitmeMarketplace\Components;
 
 use Doctrine\DBAL\Connection;
+use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
 
 class Exporter
 {
@@ -84,6 +85,8 @@ class Exporter
         $shop = Shopware()->Shop();
         $shopId = $shop->getId();
         $categoryId = $shop->getCategory()->getId();
+        $shopConfig = HmShop::getShopConfigByShopId($shopId);
+        $shippingGroup = $shopConfig->get('defaultShippingGroup');
 
         $limit = 100;
         $offset = 0;
@@ -100,6 +103,10 @@ SELECT
 	a.description AS short_description,
 	d.suppliernumber AS mpn,
 	s.name AS manufacturer,
+	CASE WHEN da.shippinggroup IS NOT NULL
+       THEN da.shippinggroup
+       ELSE ?
+    END AS shipping_group,
 	CASE WHEN u.unit IS NOT NULL
        THEN CONCAT_WS(' ', IFNULL(d.purchaseunit, 1), u.unit)
        ELSE ''
@@ -130,11 +137,11 @@ SQL;
 
         $sql = sprintf($sql, StockManagement::STATUS_BLOCKED);
 
-        $header = array('ean', 'title', 'description', 'short_description', 'picture', 'category', 'mpn', 'manufacturer', 'content_volume');
+        $header = array('ean', 'title', 'description', 'short_description', 'picture', 'category', 'mpn', 'manufacturer', 'content_volume', 'shipping_group');
         $writeData = array();
 
         while (true) {
-            $stmt = $this->connection->executeQuery($sql . sprintf(' LIMIT %d,%d', $offset, $limit), array($shopId, $categoryId));
+            $stmt = $this->connection->executeQuery($sql . sprintf(' LIMIT %d,%d', $offset, $limit), array($shippingGroup, $shopId, $categoryId));
             $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             if (empty($data)) {
                 break;
