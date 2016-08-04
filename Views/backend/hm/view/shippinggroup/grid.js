@@ -24,6 +24,16 @@ Ext.define('Shopware.apps.Hm.view.shippinggroup.Grid', {
         emptyText: '{s name=hm/shippinggroup/grid/toolbar/combobox/choose_shippinggroup}{/s}',
     }),
 
+    EditShippinggroupMenu: Ext.create('Ext.Button',{
+        text: '{s name=hm/shippinggroup/grid/toolbar/button/edit_shippinggroup}{/s}',
+        iconCls: 'sprite-pencil',
+        disabled: true,
+        menu: {
+            xtype: 'menu',
+            plain: true
+        }
+    }),
+
     reloadTree: false,
 
     initComponent: function () {
@@ -73,6 +83,8 @@ Ext.define('Shopware.apps.Hm.view.shippinggroup.Grid', {
         });
         me.ShippinggroupCombo.getStore().load();
 
+        me.EditShippinggroupMenu.menu.add( me.ShippinggroupCombo );
+
         me.callParent(arguments);
     },
 
@@ -82,14 +94,19 @@ Ext.define('Shopware.apps.Hm.view.shippinggroup.Grid', {
      * @return [Ext.selection.CheckboxModel] grid selection model
      */
     getGridSelModel: function () {
+        var me = this;
+
         return Ext.create('Ext.selection.CheckboxModel',{
             listeners:{
                 // prevent selection of records with no ean
                 beforeselect: function(selModel, record, index) {
                     if ((Ext.String.trim( record.get('ean')) == '')) {
-                        Ext.Msg.alert('Please complete the article! ','You cannot check these rows until you complete ean field.');
+                        Ext.Msg.alert('{s name=hm/shippinggroup/grid/column/gridselection/alert/title}{/s}','{s name=hm/shippinggroup/grid/column/gridselection/alert/message}{/s}');
                         return false;
                     }
+                },
+                selectionchange: function (selModel, selections) {
+                    me.EditShippinggroupMenu.setDisabled(selections.length === 0);
                 }
             }
         });
@@ -159,15 +176,7 @@ Ext.define('Shopware.apps.Hm.view.shippinggroup.Grid', {
             items: [
                 me.ShopFilter,
                 '-',
-                {
-                    text: '{s name=hm/shippinggroup/grid/toolbar/button/edit_shippinggroup}{/s}',
-                    iconCls: 'sprite-pencil',
-                    menu: {
-                        xtype: 'menu',
-                        plain: true,
-                        items: me.ShippinggroupCombo
-                    }
-                },
+                me.EditShippinggroupMenu,
                 '->',
                 {
                     xtype: 'textfield',
