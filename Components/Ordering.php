@@ -50,9 +50,9 @@ class Ordering
      * @param Client $apiClient
      * @param int|string $deliveryMethod
      * @param int|string $paymentMethod
-     * @param int|string $shop
+     * @param Shop $shop
      */
-    public function __construct(Connection $connection, Client $apiClient, $deliveryMethod, $paymentMethod, $shop)
+    public function __construct(Connection $connection, Client $apiClient, $deliveryMethod, $paymentMethod, Shop $shop)
     {
         $this->connection = $connection;
         $this->apiClient = $apiClient;
@@ -287,7 +287,7 @@ class Ordering
         if (empty($this->shop)) {
             throw new \Exception('Shop is not set');
         }
-        return Shopware()->Models()->getReference('Shopware\Models\Shop\Shop', $this->shop);
+        return $this->shop;
     }
 
     /**

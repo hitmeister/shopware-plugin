@@ -137,7 +137,7 @@ class StockManagement
         }
 
         // Look for price
-        $price = $this->getPrice($detail);
+        $price = $this->getPrice($detail,$shop);
 
         // Items in stock
         $inStock = $detail->getInStock();
@@ -326,10 +326,16 @@ class StockManagement
      * @return int
      * @throws \Exception
      */
-    private function getPrice(Detail $detail)
+    private function getPrice(Detail $detail,Shop $shop)
     {
-        $q = sprintf('SELECT `price` FROM `s_articles_prices` WHERE `articledetailsID` = %d AND `from` = 1 AND `pricegroup` = "EK" ORDER BY `price` ASC LIMIT 1', $detail->getId());
-        $stmt = $this->connection->executeQuery($q);
+        $pricegroup = $shop->getCustomerGroup()->getKey();
+        $q = sprintf('SELECT `price` FROM `s_articles_prices` WHERE `articledetailsID` = %d AND `from` = 1 AND `pricegroup` = ? ORDER BY `price` ASC LIMIT 1', $detail->getId());
+        $stmt = $this->connection->executeQuery($q, array($pricegroup));
+
+        if (!($price = $stmt->fetchColumn(0)) && $pricegroup != 'EK') {
+            $pricegroup = 'EK';
+            $stmt = $this->connection->executeQuery($q, array($pricegroup));
+        }
 
         if (!($price = $stmt->fetchColumn(0))) {
             throw new \Exception('There is no price for article details.');
