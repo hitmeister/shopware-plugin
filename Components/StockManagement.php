@@ -68,11 +68,9 @@ class StockManagement
      */
     public function flushInventory($shopId)
     {
-        $shopConfig = HmShop::getShopConfigByShopId($shopId);
-        $basePath = 'http://' . $shopConfig->get('basePath');
-        $baseFile = $shopConfig->get('baseFile');
-        $url = $basePath . DIRECTORY_SEPARATOR . $baseFile . "?sViewport=Hm&sAction=flushCommand";
-        $this->apiClient->importFiles()->post($url);
+        $shopUrl = HmShop::getShopUrl($shopId,true);
+        $callback = $shopUrl . "?sViewport=Hm&sAction=flushCommand";
+        $this->apiClient->importFiles()->post($callback);
     }
 
     /**

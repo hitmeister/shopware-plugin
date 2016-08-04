@@ -34,10 +34,8 @@ class Shopware_Controllers_Backend_HmExports extends Shopware_Controllers_Backen
             return $this->View()->assign(array('success' => false, 'message' => 'No shop id is passed!'));
         }
 
-        $shopConfig = HmShop::getShopConfigByShopId($shopId);
-        $basePath = 'http://' . $shopConfig->get('basePath');
-        $baseFile = $shopConfig->get('baseFile');
-        $callback = $basePath . DIRECTORY_SEPARATOR . $baseFile . "?sViewport=Hm&sAction=export&id=" . date('YmdHis');
+        $shopUrl = HmShop::getShopUrl($shopId,true);
+        $callback = $shopUrl . "?sViewport=Hm&sAction=export&id=" . date('YmdHis');
 
         try {
             $id = $this->getApiClient()->importFiles()->post($callback, Constants::TYPE_PRODUCT_FEED);
