@@ -332,11 +332,6 @@ class StockManagement
         $q = sprintf('SELECT `price` FROM `s_articles_prices` WHERE `articledetailsID` = %d AND `from` = 1 AND `pricegroup` = ? ORDER BY `price` ASC LIMIT 1', $detail->getId());
         $stmt = $this->connection->executeQuery($q, array($pricegroup));
 
-        if (!($price = $stmt->fetchColumn(0)) && $pricegroup != 'EK') {
-            $pricegroup = 'EK';
-            $stmt = $this->connection->executeQuery($q, array($pricegroup));
-        }
-
         if (!($price = $stmt->fetchColumn(0))) {
             throw new \Exception('There is no price for article details.');
         }
