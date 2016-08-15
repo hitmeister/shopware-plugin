@@ -5,6 +5,8 @@ Ext.define('Shopware.apps.Hm.view.main.Window', {
     layout: 'fit',
     autoShow: false,
 
+    width: 960,
+
     title: '{s name="main_title"}{/s}',
 
     // Components

@@ -143,7 +143,7 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                 text: '{s name=hm/stock/grid/column/is_stock/title}{/s}',
                 dataIndex: 'instock',
                 menuDisabled: true,
-                width: 40
+                width: 45
             },
             {
                 xtype: 'datecolumn',
