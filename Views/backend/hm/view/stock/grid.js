@@ -186,6 +186,19 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                 }
             },
             {
+                text: '{s namespace=backend/hm/view/shippinggroup name=hm/shippinggroup/grid/column/shippinggroup/title}{/s}',
+                dataIndex: 'hm_shippinggroup',
+                menuDisabled: true,
+                width: 110,
+                renderer: function (value, metaData, record) {
+                    var shopFilter = me.getShopFilterValue();
+                    if(!shopFilter){
+                        return '';
+                    }
+                    return value;
+                }
+            },
+            {
                 xtype: 'actioncolumn',
                 text: '{s name=hm/stock/grid/column/options/title}{/s}',
                 menuDisabled: true,
