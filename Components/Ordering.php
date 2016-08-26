@@ -58,7 +58,7 @@ class Ordering
         $this->apiClient = $apiClient;
         $this->deliveryMethodId = $deliveryMethod;
         $this->paymentMethodId = $paymentMethod;
-        $this->shop = $shop;
+        $this->shop = Shopware()->Models()->find('Shopware\Models\Shop\Shop', $shop->getId());
     }
 
     /**
@@ -190,8 +190,11 @@ class Ordering
         $customer->setAccountMode(1);
         $customer->setActive(true);
         $customer->setEmail($email);
+        $customer->setGroup($this->getShop()->getCustomerGroup());
+        $customer->setPaymentId(Shopware()->Config()->get('paymentdefault'));
 
         $billAddress = new Billing();
+        $billAddress->setSalutation($billing->gender=='female'?'ms':'mr');
         $billAddress->setCountryId($this->getCountryId($billing->country));
         $billAddress->setFirstName($billing->first_name?:'');
         $billAddress->setLastName($billing->last_name?:'');
@@ -203,6 +206,7 @@ class Ordering
         $billAddress->setAdditionalAddressLine1($billing->additional_field?:'');
 
         $shipAddress = new Shipping();
+        $shipAddress->setSalutation($shipping->gender=='female'?'ms':'mr');
         $shipAddress->setCountryId($this->getCountryId($shipping->country));
         $shipAddress->setFirstName($shipping->first_name?:'');
         $shipAddress->setLastName($shipping->last_name?:'');
