@@ -36,16 +36,20 @@ class Shopware_Controllers_Backend_Hm extends Shopware_Controllers_Backend_ExtJs
     public function getActiveShopsAction()
     {
         $shops = Shop::getActiveShops();
+        $setDefaultShop = $this->Request()->getParam('setDefaultShop', 0);
         if(count($shops)){
-            /** @var $namespace Enlight_Components_Snippet_Namespace */
-            $namespace = Shopware()->Snippets()->getNamespace('backend/hm/view/stock');
-            $defaultShop = array(array(
-              'id'    => 0,
-              'name'  => $namespace->get('hm/stock/grid/toolbar/combo/filter_shop_all'),
-              'category_id' => 0
+            if($setDefaultShop == 1){
+                /** @var $namespace Enlight_Components_Snippet_Namespace */
+                $namespace = Shopware()->Snippets()->getNamespace('backend/hm/view/stock');
+                $defaultShop = array(array(
+                  'id'    => 0,
+                  'name'  => $namespace->get('hm/stock/grid/toolbar/combo/filter_shop_all'),
+                  'category_id' => 0
 
-            ));
-            $shops = array_merge($defaultShop, $shops);
+                ));
+                $shops = array_merge($defaultShop, $shops);
+            }
+            $shops = array_values($shops);
             $this->View()->assign(array(
               'success' => true,
               'data' => array_map(function ($item) {return array('id' => $item['id'], 'name' => $item['name'], 'category_id' => $item['category_id']);}, $shops)

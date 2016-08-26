@@ -3,20 +3,6 @@ Ext.define('Shopware.apps.Hm.view.export.Grid', {
     extend: 'Ext.grid.Panel',
     alias: 'widget.hm-export-grid',
 
-    // shop filter
-    ShopFilter: Ext.create('Ext.form.field.ComboBox', {
-        store: Ext.create('Shopware.apps.Hm.store.Shop').load(),
-        queryMode: 'local',
-        editable: false,
-        valueField: 'id',
-        displayField: 'name',
-    }),
-
-    ButtonExport: Ext.create('Ext.button.Button', {
-        text: '{s name=hm/stock/grid/toolbar/button/export}{/s}',
-        iconCls: 'sprite-plus-circle-frame'
-    }),
-
     initComponent: function () {
         var me = this;
 
@@ -35,9 +21,22 @@ Ext.define('Shopware.apps.Hm.view.export.Grid', {
 
         me.store = Ext.create('Shopware.apps.Hm.store.Export');
 
+        // shop filter
+        me.ShopFilter = Ext.create('Ext.form.field.ComboBox', {
+            store: Ext.create('Shopware.apps.Hm.store.Shop').load(),
+            queryMode: 'local',
+            editable: false,
+            valueField: 'id',
+            displayField: 'name',
+        });
+
+        me.ButtonExport = Ext.create('Ext.button.Button', {
+            text: '{s name=hm/stock/grid/toolbar/button/export}{/s}',
+            iconCls: 'sprite-plus-circle-frame'
+        });
+
         // reset default value
-        me.ShopFilter.getStore().removeAt(0);
-        me.ShopFilter.select(me.ShopFilter.getStore().getAt(0));
+        me.ShopFilter.select(1);
         me.setGridStoreShopFilter();
 
         // add filter event

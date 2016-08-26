@@ -3,36 +3,37 @@ Ext.define('Shopware.apps.Hm.view.notifications.Grid', {
     extend: 'Ext.grid.Panel',
     alias: 'widget.hm-notifications-grid',
 
-    // shop filter
-    ShopFilter: Ext.create('Ext.form.field.ComboBox', {
-        store: Ext.create('Shopware.apps.Hm.store.Shop').load(),
-        queryMode: 'local',
-        editable: false,
-        valueField: 'id',
-        displayField: 'name'
-    }),
-
-    ButtonEnableAll: Ext.create('Ext.button.Button', {
-        text: '{s name=hm/notifications/grid/toolbar/button/enable_all}{/s}',
-        iconCls: 'sprite-plus-circle-frame'
-    }),
-
-    ButtonDisableAll: Ext.create('Ext.button.Button', {
-        text: '{s name=hm/notifications/grid/toolbar/button/disable_all}{/s}',
-        iconCls: 'sprite-minus-circle-frame'
-    }),
-
-    ButtonResetAll: Ext.create('Ext.button.Button', {
-        text: '{s name=hm/notifications/grid/toolbar/button/reset_all}{/s}',
-        iconCls: 'sprite-arrow-circle-135'
-    }),
-
     initComponent: function () {
         var me = this;
 
         me.addEvents('enable_all', 'disable_all', 'enable', 'disable', 'reset_all');
 
         me.store = Ext.create('Shopware.apps.Hm.store.Notification');
+
+        // shop filter
+        me.ShopFilter = Ext.create('Ext.form.field.ComboBox', {
+            store: Ext.create('Shopware.apps.Hm.store.Shop').load(),
+            queryMode: 'local',
+            editable: false,
+            valueField: 'id',
+            displayField: 'name'
+        });
+
+        me.ButtonEnableAll = Ext.create('Ext.button.Button', {
+            text: '{s name=hm/notifications/grid/toolbar/button/enable_all}{/s}',
+            iconCls: 'sprite-plus-circle-frame'
+        });
+
+        me.ButtonDisableAll = Ext.create('Ext.button.Button', {
+            text: '{s name=hm/notifications/grid/toolbar/button/disable_all}{/s}',
+            iconCls: 'sprite-minus-circle-frame'
+        });
+
+        me.ButtonResetAll = Ext.create('Ext.button.Button', {
+            text: '{s name=hm/notifications/grid/toolbar/button/reset_all}{/s}',
+            iconCls: 'sprite-arrow-circle-135'
+        });
+
         me.columns = me.getCreateColumns();
         me.dockedItems = [
             me.getCreateToolbar(),
@@ -40,8 +41,7 @@ Ext.define('Shopware.apps.Hm.view.notifications.Grid', {
         ];
 
         // reset default value
-        me.ShopFilter.getStore().removeAt(0);
-        me.ShopFilter.select(me.ShopFilter.getStore().getAt(0));
+        me.ShopFilter.select(1);
         me.setGridStoreShopFilter();
 
         // add filter event

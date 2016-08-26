@@ -9,36 +9,6 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
     StatusNotFound: 'not_found_on_hm',
     StatusSynchronizing: 'synchronizing',
 
-    // shop filter
-    ShopFilter: Ext.create('Ext.form.field.ComboBox', {
-        store: Ext.create('Shopware.apps.Hm.store.Shop').load(),
-        queryMode: 'local',
-        editable: false,
-        valueField: 'id',
-        displayField: 'name',
-        emptyText: 'Shop Filter',
-    }),
-
-    ButtonSyncAll: Ext.create('Ext.button.Button', {
-        text: '{s name=hm/stock/grid/toolbar/button/sync_stock_listed}{/s}',
-        iconCls: 'sprite-arrow-circle-045-left',
-        disabled: true
-    }),
-
-    ButtonBlockAll: Ext.create('Ext.button.Button', {
-        text: '{s name=hm/stock/grid/toolbar/button/stop_sync_stock_listed}{/s}',
-        iconCls: 'sprite-cross-circle',
-        disabled: true
-    }),
-
-    ButtonDeleteAll: Ext.create('Ext.button.Button', {
-        text: '{s name=hm/stock/grid/toolbar/button/delete_stock_listed}{/s}',
-        iconCls: 'sprite-minus-circle-frame',
-        disabled: true
-    }),
-
-
-
     initComponent: function () {
         var me = this;
 
@@ -56,6 +26,38 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
         };
 
         me.addEvents('block', 'unblock', 'sync', 'sync_all', 'block_all', 'delete_all');
+
+        // shop filter
+        me.ShopFilter = Ext.create('Ext.form.field.ComboBox', {
+            store: Ext.create('Shopware.apps.Hm.store.Shop').load({
+                params:{
+                    'setDefaultShop': 1
+                }
+            }),
+            queryMode: 'local',
+            editable: false,
+            valueField: 'id',
+            displayField: 'name',
+            emptyText: 'Shop Filter',
+        });
+
+        me.ButtonSyncAll = Ext.create('Ext.button.Button', {
+            text: '{s name=hm/stock/grid/toolbar/button/sync_stock_listed}{/s}',
+            iconCls: 'sprite-arrow-circle-045-left',
+            disabled: true
+        });
+
+        me.ButtonBlockAll = Ext.create('Ext.button.Button', {
+            text: '{s name=hm/stock/grid/toolbar/button/stop_sync_stock_listed}{/s}',
+            iconCls: 'sprite-cross-circle',
+            disabled: true
+        });
+
+        me.ButtonDeleteAll = Ext.create('Ext.button.Button', {
+            text: '{s name=hm/stock/grid/toolbar/button/delete_stock_listed}{/s}',
+            iconCls: 'sprite-minus-circle-frame',
+            disabled: true
+        });
 
         me.store = Ext.create('Shopware.apps.Hm.store.Stock');
         me.columns = me.getCreateColumns();

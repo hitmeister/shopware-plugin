@@ -3,37 +3,6 @@ Ext.define('Shopware.apps.Hm.view.shippinggroup.Grid', {
     extend: 'Ext.grid.Panel',
     alias: 'widget.hm-shippinggroup-grid',
 
-    // shop filter
-    ShopFilter: Ext.create('Ext.form.field.ComboBox', {
-        store: Ext.create('Shopware.apps.Hm.store.Shop').load(),
-        queryMode: 'local',
-        editable: false,
-        valueField: 'id',
-        displayField: 'name',
-        emptyText: 'Shop Filter',
-    }),
-
-    // shipping groups
-    ShippinggroupCombo: Ext.create('Ext.form.field.ComboBox', {
-        store: Ext.create('Ext.data.Store', { model: 'Shopware.apps.Hm.model.hm.Shippinggroup' }),
-        queryMode: 'local',
-        editable: false,
-        valueField: 'name',
-        displayField: 'name',
-        forceSelection: true,
-        emptyText: '{s name=hm/shippinggroup/grid/toolbar/combobox/choose_shippinggroup}{/s}',
-    }),
-
-    EditShippinggroupMenu: Ext.create('Ext.Button',{
-        text: '{s name=hm/shippinggroup/grid/toolbar/button/edit_shippinggroup}{/s}',
-        iconCls: 'sprite-pencil',
-        disabled: true,
-        menu: {
-            xtype: 'menu',
-            plain: true
-        }
-    }),
-
     reloadTree: false,
 
     initComponent: function () {
@@ -45,6 +14,37 @@ Ext.define('Shopware.apps.Hm.view.shippinggroup.Grid', {
 
         me.store = Ext.create('Shopware.apps.Hm.store.Shippinggroup');
 
+        // shop filter
+        me.ShopFilter = Ext.create('Ext.form.field.ComboBox', {
+            store: Ext.create('Shopware.apps.Hm.store.Shop').load(),
+            queryMode: 'local',
+            editable: false,
+            valueField: 'id',
+            displayField: 'name',
+            emptyText: 'Shop Filter',
+        });
+
+        // shipping groups
+        me.ShippinggroupCombo = Ext.create('Ext.form.field.ComboBox', {
+            store: Ext.create('Ext.data.Store', { model: 'Shopware.apps.Hm.model.hm.Shippinggroup' }),
+            queryMode: 'local',
+            editable: false,
+            valueField: 'name',
+            displayField: 'name',
+            forceSelection: true,
+            emptyText: '{s name=hm/shippinggroup/grid/toolbar/combobox/choose_shippinggroup}{/s}',
+        });
+
+        me.EditShippinggroupMenu = Ext.create('Ext.Button',{
+            text: '{s name=hm/shippinggroup/grid/toolbar/button/edit_shippinggroup}{/s}',
+            iconCls: 'sprite-pencil',
+            disabled: true,
+            menu: {
+                xtype: 'menu',
+                plain: true
+            }
+        });
+
         me.columns = me.getCreateColumns();
         me.dockedItems = [
             me.getCreateToolbar(),
@@ -52,8 +52,7 @@ Ext.define('Shopware.apps.Hm.view.shippinggroup.Grid', {
         ];
 
         // reset default value
-        me.ShopFilter.getStore().removeAt(0);
-        me.ShopFilter.select(me.ShopFilter.getStore().getAt(0));
+        me.ShopFilter.select(1);
         me.setGridStoreShopFilter();
         // after init reload tree
         me.reloadTree = true;
