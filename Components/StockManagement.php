@@ -10,7 +10,7 @@ use Hitmeister\Component\Api\Transfers\UnitAddTransfer;
 use Hitmeister\Component\Api\Transfers\UnitUpdateTransfer;
 use Shopware\Models\Article\Detail;
 use Shopware\CustomModels\HitmeMarketplace\Stock;
-use Shopware\Models\Shop\Shop;
+use Shopware\Models\Shop\Shop as SwShop;
 use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
 
 
@@ -77,11 +77,11 @@ class StockManagement
      * @param Detail $detail
      * @param bool $forceNotFound
      * @param Stock $stock
-     * @param Shop $shop
+     * @param SwShop $shop
      * @return bool
      * @throws \Exception
      */
-    public function syncByArticleDetails(Detail $detail, $forceNotFound = false, Stock $stock, Shop $shop)
+    public function syncByArticleDetails(Detail $detail, $forceNotFound = false, Stock $stock, SwShop $shop)
     {
         $attr = $detail->getAttribute();
 
@@ -246,12 +246,12 @@ class StockManagement
     /**
      * @param Detail $detail
      * @param Stock $stock
-     * @param Shop $shop
+     * @param SwShop $shop
      * @param string $shippinggroup
      * @return bool
      * @throws \Exception
      */
-    public function updateShippinggroup(Detail $detail, Stock $stock, Shop $shop, $shippinggroup)
+    public function updateShippinggroup(Detail $detail, Stock $stock, SwShop $shop, $shippinggroup)
     {
         // For some reason there may be no stock object
         if ($stock == null) {
@@ -326,7 +326,7 @@ class StockManagement
      * @return int
      * @throws \Exception
      */
-    private function getPrice(Detail $detail,Shop $shop)
+    private function getPrice(Detail $detail,SwShop $shop)
     {
         $pricegroup = $shop->getCustomerGroup()->getKey();
         $q = sprintf('SELECT `price` FROM `s_articles_prices` WHERE `articledetailsID` = %d AND `from` = 1 AND `pricegroup` = ? ORDER BY `price` ASC LIMIT 1', $detail->getId());
