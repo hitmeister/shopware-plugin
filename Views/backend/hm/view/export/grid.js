@@ -20,6 +20,41 @@ Ext.define('Shopware.apps.Hm.view.export.Grid', {
         };
 
         me.store = Ext.create('Shopware.apps.Hm.store.Export');
+
+        // shop filter
+        me.ShopFilter = Ext.create('Ext.form.field.ComboBox', {
+            store: Ext.create('Shopware.apps.Hm.store.Shop').load(),
+            queryMode: 'local',
+            editable: false,
+            valueField: 'id',
+            displayField: 'name',
+        });
+
+        me.ButtonExport = Ext.create('Ext.button.Button', {
+            text: '{s name=hm/stock/grid/toolbar/button/export}{/s}',
+            iconCls: 'sprite-plus-circle-frame'
+        });
+
+        // reset default value
+        me.ShopFilter.select(1);
+        me.setGridStoreShopFilter();
+
+        // add filter event
+        me.ShopFilter.on('change', function(){
+            var shopId = me.getShopFilterValue();
+            if(shopId){
+                me.ButtonExport.enable();
+            }else{
+                me.ButtonExport.disable();
+            }
+            me.setGridStoreShopFilter();
+
+        });
+
+        me.ButtonExport.on('click', function(){
+            me.fireEvent('export')
+        });
+
         me.columns = me.getCreateColumns();
         me.dockedItems = [
             me.getCreateToolbar(),
@@ -120,15 +155,33 @@ Ext.define('Shopware.apps.Hm.view.export.Grid', {
             xtype: 'toolbar',
             ui: 'shopware-ui',
             items: [
-                {
-                    xtype: 'button',
-                    text: '{s name=hm/stock/grid/toolbar/button/export}{/s}',
-                    iconCls: 'sprite-plus-circle-frame',
-                    handler: function() {
-                        me.fireEvent('export')
-                    }
-                },
+                me.ShopFilter,
+                '-',
+                me.ButtonExport,
             ]
         };
-    }
+    },
+
+    getShopFilterValue: function() {
+        var me = this,
+            shopId = me.ShopFilter.getValue();
+        shopId = Ext.util.Format.number(shopId, '0/i');
+        if (shopId > 0) {
+            return shopId;
+        }
+
+        return false;
+    },
+
+    setGridStoreShopFilter: function() {
+        var me = this;
+        shopId = me.getShopFilterValue();
+        if(shopId){
+            me.store.getProxy().extraParams = {
+                shopId: shopId
+            };
+            me.store.reload();
+        }
+    },
+
 });

@@ -41,12 +41,14 @@ class Form
             'label' => 'API: Client key',
             'description' => 'Diese Information finden Sie im Hitmeister Account unter Shopseinstellungen; API.',
             'required' => true,
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         $this->form->setElement('text', 'secretKey', array(
             'label' => 'API: Secret key',
             'description' => 'Diese Information finden Sie im Hitmeister-Account unter Shopseinstellungen; API.',
             'required' => true,
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         $this->form->setElement('text', 'apiUrl', array(
@@ -54,9 +56,21 @@ class Form
             'description' => 'Welche API Version nutzen Sie',
             'value' => 'https://www.hitmeister.de/api/v1/',
             'required' => true,
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         // Stock management
+        $this->form->setElement('select', 'syncStatus', array(
+          'label' => 'Stock: Sync status',
+          'description' => 'Bitte legen Sie den globalen Sync Status für den Subshop fest. ACHTUNG: Wenn sie Artikel eines Shops bei Hitmeister blocken oder löschen wollen, dann müssen Sie den entsprechenden Aufruf vorher im Hitmeister Modul starten.',
+          'required' => true,
+          'store' => array(
+            array(1, 'Aktiviert'),
+            array(0, 'Deaktiviert'),
+          ),
+          'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
+        ));
+
         $this->form->setElement('select', 'defaultDelivery', array(
             'label' => 'Stock: Default delivery time',
             'description' => 'Sollten Sie bei Artikeln keine Lieferzeit hinterlegt haben, dann wird diese hier eingetragene Lieferzeit automatisch hinterlegt.',
@@ -73,6 +87,7 @@ class Form
                 array(Constants::DELIVERY_TIME_G, 'Ships in 5-7 weeks'),
                 array(Constants::DELIVERY_TIME_I, 'Ships in 8-10 weeks'),
             ),
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         $this->form->setElement('select', 'defaultCondition', array(
@@ -87,6 +102,38 @@ class Form
                 array(Constants::CONDITION_USED_GOOD, Constants::CONDITION_USED_GOOD),
                 array(Constants::CONDITION_USED_ACCEPTABLE, Constants::CONDITION_USED_ACCEPTABLE),
             ),
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
+        ));
+
+        // Shipping Group
+        $this->form->setElement('combo', 'defaultShippingGroup', array(
+          'label' => 'Shipping Group: Default shipping code',
+          'description' => 'Bitte legen Sie die globale Shipping Group fest. Diese Einstellung wird für alle auf Hitmeister angebotenen Artikel übernommen.',
+          'value' => null,
+          'valueField'=>'name',
+          'displayField'=>'name',
+          'triggerAction' => 'all',
+          'required' => true,
+          'store' => 'new Ext.data.Store({
+                fields: [
+                   "name"
+                ],
+                proxy : {
+                    type : "ajax",
+                    autoLoad : true,
+                    api : {
+                        read : document.location.pathname + \'Hm/getShippingGroups\',
+                    },
+                    extraParams : {
+                        field_name: me.name
+                    },
+                    reader : {
+                        type : "json",
+                        root : "data"
+                    }
+                }
+          })',
+          'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         // Order
@@ -97,6 +144,7 @@ class Form
             'required' => true,
             'value' => !empty($deliveryMethods) ? $deliveryMethods[0][0] : '',
             'store' => $deliveryMethods,
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         $paymentMethods = Shopware()->Db()->fetchAll('SELECT id, name FROM s_core_paymentmeans', array(), \PDO::FETCH_NUM);
@@ -106,15 +154,7 @@ class Form
             'required' => true,
             'value' => !empty($paymentMethods) ? $paymentMethods[0][0] : '',
             'store' => $paymentMethods,
-        ));
-
-        $shops = Shopware()->Db()->fetchAll('SELECT id, name FROM s_core_shops', array(), \PDO::FETCH_NUM);
-        $this->form->setElement('select', 'defaultShop', array(
-            'label' => 'Orders: Default shop',
-            'description' => 'Welcher Subshop soll mit Hitmeister.de verbunden werden?',
-            'required' => true,
-            'value' => !empty($shops) ? $shops[0][0] : '',
-            'store' => $shops,
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
         // Delivery
@@ -149,6 +189,7 @@ class Form
                 array(Constants::CARRIER_CODE_TRANS_O_FLEX, Constants::CARRIER_CODE_TRANS_O_FLEX),
                 array(Constants::CARRIER_CODE_UPS, Constants::CARRIER_CODE_UPS),
             ),
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
     }
 

@@ -3,6 +3,7 @@
 use ShopwarePlugins\HitmeMarketplace\Bootstrap\Attributes;
 use ShopwarePlugins\HitmeMarketplace\Bootstrap\Callback;
 use ShopwarePlugins\HitmeMarketplace\Bootstrap\Form;
+use ShopwarePlugins\HitmeMarketplace\Bootstrap\Schema;
 use ShopwarePlugins\HitmeMarketplace\Subscriber\Backend;
 use ShopwarePlugins\HitmeMarketplace\Subscriber\ControllerPath;
 use ShopwarePlugins\HitmeMarketplace\Subscriber\Ordering;
@@ -11,6 +12,20 @@ use ShopwarePlugins\HitmeMarketplace\Subscriber\Stock;
 
 class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Components_Plugin_Bootstrap
 {
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getCapabilities()
+    {
+        return array(
+          'install' => true,
+          'enable' => true,
+          'update' => true,
+          'secureUninstall' => true
+        );
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -57,6 +72,7 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
             throw new Exception(sprintf('This plugin requires Shopware %s or a later version', $info['compatibility']['minimumVersion']));
         }
 
+        Schema::create();
         Attributes::create();
 
         $this->createEvents();
@@ -73,13 +89,23 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
      */
     public function update($version)
     {
-        if ($version == '1.0.0') {
-            Attributes::fixDev2210();
+        try{
+            if ($version == '1.0.0') {
+                Attributes::fixDev2210();
+            }
+
+            if($this->getVersion() == '2.0.0'){
+                Schema::create();
+                Attributes::copyAttributesInSchemaV200();
+            }
+
+            Callback::update($this->getVersion(), $version);
+
+            return array('success' => true, 'invalidateCache' => array('backend', 'proxy'));
+        }catch (Exception $e){
+            return array('success' => false, 'message' => $e->getMessage());
         }
 
-        Callback::update($this->getVersion(), $version);
-
-        return array('success' => true, 'invalidateCache' => array('backend', 'proxy'));
     }
 
     /**
@@ -87,7 +113,9 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
      */
     public function uninstall()
     {
+        $this->secureUninstall();
         Callback::uninstall($this->getVersion());
+        Schema::drop();
 
         return array('success' => true, 'invalidateCache' => array('backend', 'proxy'));
     }
@@ -98,6 +126,7 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
     public function afterInit()
     {
         $this->Application()->Loader()->registerNamespace('ShopwarePlugins\HitmeMarketplace', $this->Path());
+        $this->registerCustomModels();
 
         // API SDK
         $sdkPath = ('production' != Shopware()->Environment()) ? 'vendor/hitmeister/api-sdk/src/' : 'Lib/Api/';
@@ -185,10 +214,6 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
                 'defaultPaymentMethod' => array(
                     'label' => 'Orders: Default payment method',
                     'description' => 'Bitte wählen Sie eine Bezahlmethode, die Ihrem System mitteilt, dass der Kauf bereits bezahlt ist, da Hitmeister die Zahlungsabwicklung für Sie übernimmt.',
-                ),
-                'defaultShop' => array(
-                    'label' => 'Orders: Default shop',
-                    'description' => 'Welcher Subshop soll mit Hitmeister.de verbunden werden?',
                 ),
                 'defaultCarrier' => array(
                     'label' => 'Shipping: Default carrier',

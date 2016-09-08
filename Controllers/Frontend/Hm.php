@@ -144,6 +144,20 @@ class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
     }
 
     /**
+     * Export products
+     */
+    public function flushCommandAction()
+    {
+        $this->Response()->setHeader('Content-Type', 'text/csv;charset=utf-8');
+        $command = "FLUSH;\n";
+
+        $this->Response()->setHeader('Content-Disposition', 'attachment; filename=flush.csv');
+        $this->Response()->sendHeaders();
+
+        echo $command;
+    }
+
+    /**
      * Show versions info
      */
     public function versionAction()

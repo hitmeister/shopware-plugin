@@ -25,7 +25,39 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
             }
         };
 
-        me.addEvents('block', 'unblock', 'sync', 'sync_all');
+        me.addEvents('block', 'unblock', 'sync', 'sync_all', 'block_all', 'delete_all');
+
+        // shop filter
+        me.ShopFilter = Ext.create('Ext.form.field.ComboBox', {
+            store: Ext.create('Shopware.apps.Hm.store.Shop').load({
+                params:{
+                    'setDefaultShop': 1
+                }
+            }),
+            queryMode: 'local',
+            editable: false,
+            valueField: 'id',
+            displayField: 'name',
+            emptyText: 'Shop Filter',
+        });
+
+        me.ButtonSyncAll = Ext.create('Ext.button.Button', {
+            text: '{s name=hm/stock/grid/toolbar/button/sync_stock_listed}{/s}',
+            iconCls: 'sprite-arrow-circle-045-left',
+            disabled: true
+        });
+
+        me.ButtonBlockAll = Ext.create('Ext.button.Button', {
+            text: '{s name=hm/stock/grid/toolbar/button/stop_sync_stock_listed}{/s}',
+            iconCls: 'sprite-cross-circle',
+            disabled: true
+        });
+
+        me.ButtonDeleteAll = Ext.create('Ext.button.Button', {
+            text: '{s name=hm/stock/grid/toolbar/button/delete_stock_listed}{/s}',
+            iconCls: 'sprite-minus-circle-frame',
+            disabled: true
+        });
 
         me.store = Ext.create('Shopware.apps.Hm.store.Stock');
         me.columns = me.getCreateColumns();
@@ -34,7 +66,50 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
             me.getCreatePaging()
         ];
 
+        // add filter event
+        me.ShopFilter.on('change', function(field, value){
+            shopId = me.getShopFilterValue();
+            if(shopId){
+                me.ButtonSyncAll.enable();
+                me.ButtonBlockAll.enable();
+                me.ButtonDeleteAll.enable();
+                me.store.clearFilter(true);
+                me.store.filter([
+                    { property: 'shopId', value: shopId }
+                ]);
+            }else{
+                me.ButtonSyncAll.disable();
+                me.ButtonBlockAll.disable();
+                me.ButtonDeleteAll.disable();
+                me.store.clearFilter();
+            }
+
+        });
+
+        me.ButtonSyncAll.on('click', function(field, value){
+            me.fireEvent('sync_all')
+        });
+
+        me.ButtonBlockAll.on('click', function(){
+            me.fireEvent('block_all')
+        });
+
+        me.ButtonDeleteAll.on('click', function(){
+            me.fireEvent('delete_all')
+        });
+
         me.callParent(arguments);
+    },
+
+    getShopFilterValue: function() {
+        var me = this;
+        var shopId = me.ShopFilter.getValue();
+        shopId = Ext.util.Format.number(shopId, '0/i');
+        if (shopId > 0) {
+            return shopId;
+        }
+
+        return false;
     },
 
     getCreateColumns: function () {
@@ -70,7 +145,7 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                 text: '{s name=hm/stock/grid/column/is_stock/title}{/s}',
                 dataIndex: 'instock',
                 menuDisabled: true,
-                width: 40
+                width: 45
             },
             {
                 xtype: 'datecolumn',
@@ -78,7 +153,14 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                 format: 'Y-m-d H:i:s',
                 dataIndex: 'hm_last_access_date',
                 menuDisabled: true,
-                width: 120
+                width: 120,
+                renderer: function (value, metaData, record) {
+                    var shopFilter = me.getShopFilterValue();
+                    if(!shopFilter){
+                        return '';
+                    }
+                    return value;
+                }
             },
             {
                 text: '{s name=hm/stock/grid/column/status/title}{/s}',
@@ -87,6 +169,10 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                 width: 110,
                 renderer: function (value, metaData, record) {
                     var status = record.get('hm_status');
+                    var shopFilter = me.getShopFilterValue();
+                    if(!shopFilter){
+                        return ''
+                    }
                     switch (status) {
                         case null:
                         case '':
@@ -99,6 +185,19 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                         case me.StatusSynchronizing:
                             return '{s name=hm/stock/grid/column/status/value/synchronizing}{/s}';
                     }
+                }
+            },
+            {
+                text: '{s namespace=backend/hm/view/shippinggroup name=hm/shippinggroup/grid/column/shippinggroup/title}{/s}',
+                dataIndex: 'hm_shippinggroup',
+                menuDisabled: true,
+                width: 110,
+                renderer: function (value, metaData, record) {
+                    var shopFilter = me.getShopFilterValue();
+                    if(!shopFilter){
+                        return '';
+                    }
+                    return value;
                 }
             },
             {
@@ -115,20 +214,22 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                             me.fireEvent('unblock', record)
                         },
                         getClass: function (value, metaData, record) {
+                            var shopFilter = me.getShopFilterValue();
                             var status = record.get('hm_status');
-                            return status == 'blocked' ? 'x-grid-icon' : 'x-hidden';
+                            return status == 'blocked' && shopFilter ? 'x-grid-icon' : 'x-hidden';
                         }
                     },
                     {
-                        iconCls: 'sprite-minus-circle-frame',
+                        iconCls: 'sprite-cross-circle',
                         tooltip: '{s name=hm/stock/grid/column/options/block/title}{/s}',
                         handler: function (grid, rowIndex) {
                             var record = grid.getStore().getAt(rowIndex);
                             me.fireEvent('block', record)
                         },
                         getClass: function (value, metaData, record) {
+                            var shopFilter = me.getShopFilterValue();
                             var status = record.get('hm_status');
-                            return status != 'blocked' ? 'x-grid-icon' : 'x-hidden';
+                            return status != 'blocked' && shopFilter ? 'x-grid-icon' : 'x-hidden';
                         }
                     },
                     {
@@ -143,9 +244,9 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
                             if ('' == Ext.String.trim(record.get('ean'))) {
                                 return 'x-hidden';
                             }
-
+                            var shopFilter = me.getShopFilterValue();
                             var status = record.get('hm_status');
-                            return status != 'blocked' ? 'x-grid-icon' : 'x-hidden';
+                            return status != 'blocked' && shopFilter ? 'x-grid-icon' : 'x-hidden';
                         }
                     }
                 ]
@@ -171,14 +272,11 @@ Ext.define('Shopware.apps.Hm.view.stock.Grid', {
             xtype: 'toolbar',
             ui: 'shopware-ui',
             items: [
-                {
-                    xtype: 'button',
-                    text: '{s name=hm/stock/grid/toolbar/button/sync_stock_listed}{/s}',
-                    iconCls: 'sprite-arrow-circle-045-left',
-                    handler: function () {
-                        me.fireEvent('sync_all')
-                    }
-                },
+                me.ShopFilter,
+                '-',
+                me.ButtonSyncAll,
+                me.ButtonBlockAll,
+                me.ButtonDeleteAll,
                 '->',
                 {
                     xtype: 'textfield',
