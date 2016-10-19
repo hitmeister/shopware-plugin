@@ -80,6 +80,7 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
         $this->createMenuEntry();
 
         Callback::install($this->getVersion());
+        $this->Plugin()->setActive(true);
 
         return array('success' => true, 'invalidateCache' => array('backend', 'proxy'));
     }
