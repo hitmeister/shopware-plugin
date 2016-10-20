@@ -83,7 +83,6 @@ class StockManagement
      */
     public function syncByArticleDetails(Detail $detail, $forceNotFound = false, Stock $stock, SwShop $shop)
     {
-        $attr = $detail->getAttribute();
 
         // For some reason there may be no stock object
         if ($stock == null) {
@@ -158,7 +157,7 @@ class StockManagement
 
             // Delete from stock
             case $hmUnitId && !$inStock:
-                return $this->deleteUnit($stock);
+                return $this->deleteAllUnits($detail->getId());
         }
 
         return true;
@@ -244,6 +243,49 @@ class StockManagement
     }
 
     /**
+     * Delete All Units by detailId
+     * @param $detailId
+     * @return bool
+     */
+    private function deleteAllUnits($detailId)
+    {
+        // Get all Stock Unit-Ids by detailID
+        $q = sprintf('SELECT `unit_id` FROM `s_plugin_hitme_stock` WHERE `article_detail_id` = %d AND `unit_id` !=""', $detailId);
+        $stmt = $this->connection->executeQuery($q);
+
+        $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        if (!empty($data)) {
+
+            foreach ($data as $item) {
+
+                // Get Stock-Object by unitID
+                /** @var Stock $stock */
+                $stockRepository = Shopware()->Models()->getRepository('Shopware\CustomModels\HitmeMarketplace\Stock');
+                $builder = $stockRepository->createQueryBuilder('Stock')
+                    ->where('Stock.unitId = :unitId');
+
+                $builder->setParameters(array(
+                    'unitId'  => $item['unit_id']
+                ));
+
+                $stock = $builder->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_OBJECT);
+
+                try {
+                    // delete Unit in DB and on hitmeister.de
+                    $this->deleteUnit($stock);
+                } catch (Exception $e) {
+                    $this->View()->assign(array('success' => false, 'message' => $e->getMessage()));
+                }
+
+            }
+
+        }
+
+        return true;
+    }
+
+    /**
      * @param Detail $detail
      * @param Stock $stock
      * @param SwShop $shop
@@ -282,7 +324,7 @@ class StockManagement
      * @param Stock $stock
      * @param string $status
      */
-    private function updateStatus($stock, $status)
+    private function updateStatus(Stock $stock, $status)
     {
         $stock->setStatus($status);
         Shopware()->Models()->flush($stock);
@@ -326,7 +368,7 @@ class StockManagement
      * @return int
      * @throws \Exception
      */
-    private function getPrice(Detail $detail,SwShop $shop)
+    private function getPrice(Detail $detail, SwShop $shop)
     {
         $pricegroup = $shop->getCustomerGroup()->getKey();
         $q = sprintf('SELECT `price` FROM `s_articles_prices` WHERE `articledetailsID` = %d AND `from` = 1 AND `pricegroup` = ? ORDER BY `price` ASC LIMIT 1', $detail->getId());

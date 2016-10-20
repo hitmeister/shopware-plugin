@@ -12,6 +12,8 @@
   "link": "https://www.hitmeister.de",
   "changelog": {
     "de": {
+      "2.0.0": "Add Subshop-Functionality",
+      "1.0.10": "Upgrade Hitmeister SDK",
       "1.0.9": "Fix issue with missing attributes of article;",
       "1.0.8": "Improve products export and price compilation;",
       "1.0.7": "Fix unit price calculation;",
@@ -24,6 +26,8 @@
       "1.0.0": "First release"
     },
     "en": {
+      "2.0.0": "Add Subshop-Functionality",
+      "1.0.10": "Upgrade Hitmeister SDK",
       "1.0.9": "Fix issue with missing attributes of article;",
       "1.0.8": "Improve products export and price compilation;",
       "1.0.7": "Fix unit price calculation;",
