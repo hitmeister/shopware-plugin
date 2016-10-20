@@ -107,32 +107,31 @@ class Form
 
         // Shipping Group
         $this->form->setElement('combo', 'defaultShippingGroup', array(
+          'itemId' => 'defaultShippingGroup',
           'label' => 'Shipping Group: Default shipping code',
           'description' => 'Bitte legen Sie die globale Shipping Group fest. Diese Einstellung wird für alle auf Hitmeister angebotenen Artikel übernommen.',
-          'value' => null,
+          'value' => '',
           'valueField'=>'name',
           'displayField'=>'name',
-          'triggerAction' => 'all',
           'required' => true,
+          'queryMode' => 'remote',
+          'queryCaching' => 'false',
           'store' => 'new Ext.data.Store({
-                fields: [
-                   "name"
-                ],
-                proxy : {
-                    type : "ajax",
-                    autoLoad : true,
-                    api : {
-                        read : document.location.pathname + \'Hm/getShippingGroups\',
-                    },
-                    extraParams : {
-                        field_name: me.name
-                    },
-                    reader : {
-                        type : "json",
-                        root : "data"
-                    }
-                }
-          })',
+                        fields: [ "name" ],
+                        proxy : {
+                         type : "ajax",
+                         api : {
+                             read: document.location.pathname + \'Hm/getShippingGroups\',
+                         },
+                         reader : {
+                             type : "json",
+                             root : "data"
+                         },
+                         extraParams : {
+                            field_name: me.name
+                         },
+                        },
+                    })',
           'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
