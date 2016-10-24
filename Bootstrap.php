@@ -9,6 +9,7 @@ use ShopwarePlugins\HitmeMarketplace\Subscriber\ControllerPath;
 use ShopwarePlugins\HitmeMarketplace\Subscriber\Ordering;
 use ShopwarePlugins\HitmeMarketplace\Subscriber\Resources;
 use ShopwarePlugins\HitmeMarketplace\Subscriber\Stock;
+use ShopwarePlugins\HitmeMarketplace\Components\Shop;
 
 class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Components_Plugin_Bootstrap
 {
@@ -64,6 +65,29 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
     /**
      * {@inheritDoc}
      */
+    public function enable()
+    {
+        $shops = Shopware()->Models()->getRepository(
+          'Shopware\Models\Shop\Shop'
+        )->getActiveShops();
+
+        $result = false;
+        foreach($shops as $shop){
+            $shopConfig = Shop::getShopConfigByShopId($shop->getId());
+            $clientKey = $shopConfig->get('clientKey');
+            $secretKey = $shopConfig->get('secretKey');
+            if(!empty($clientKey) && !empty($secretKey)){
+                $result = true;
+                break;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function install()
     {
         $info = $this->getPluginJson();
@@ -80,7 +104,6 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
         $this->createMenuEntry();
 
         Callback::install($this->getVersion());
-        $this->Plugin()->setActive(true);
 
         return array('success' => true, 'invalidateCache' => array('backend', 'proxy'));
     }
