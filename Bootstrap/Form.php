@@ -38,6 +38,7 @@ class Form
 
         // Api settings
         $this->form->setElement('text', 'clientKey', array(
+            'itemId' => 'hmClientKey',
             'label' => 'API: Client key',
             'description' => 'Diese Information finden Sie im Hitmeister Account unter Shopseinstellungen; API.',
             'required' => true,
@@ -45,9 +46,20 @@ class Form
         ));
 
         $this->form->setElement('text', 'secretKey', array(
+            'itemId' => 'hmSecretKey',
             'label' => 'API: Secret key',
             'description' => 'Diese Information finden Sie im Hitmeister-Account unter Shopseinstellungen; API.',
             'required' => true,
+            'afterSubTpl' => '<h2>Ablauf Plugininstallation</h2>
+            <ul>
+            <li>* Installation</li>
+            <li>* Api-Credetials eintragen</li>
+            <li>* speichern</li>
+            <li>* aktivieren</li>
+            <li>* Shippinggroups auswählen</li>
+            <li>* speichern</li>
+            <li>* installation abgeschlossen</li>
+            </ul>',
             'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
 
@@ -113,10 +125,10 @@ class Form
           'value' => '',
           'valueField'=>'name',
           'displayField'=>'name',
-          'required' => true,
           'queryMode' => 'remote',
           'queryCaching' => 'false',
           'store' => 'new Ext.data.Store({
+                        parent: this,
                         fields: [ "name" ],
                         proxy : {
                          type : "ajax",
@@ -131,6 +143,39 @@ class Form
                             field_name: me.name
                          },
                         },
+                        listeners : {
+                            beforeload: function(store, operation, options){
+                                var combo = store.parent,
+                                    comboName = combo.getName(),
+                                    regExpMatch = comboName.match(/values\[(\d+)\]\[(\d+)\]/),
+                                    tabIndex = regExpMatch[1],
+                                    queryClientKeys = Ext.ComponentQuery.query("[itemId=hmClientKey]"),
+                                    querySecretKeys = Ext.ComponentQuery.query("[itemId=hmSecretKey]"),
+                                    clientKeys = [],
+                                    secretKeys = [];
+
+                                    Ext.each(queryClientKeys, function(query, index) {
+                                        var clientKeyValueMatch = query.getName().match(/values\[(\d+)\]\[(\d+)\]/),
+                                            indexClientKeyValue = clientKeyValueMatch[1];
+                                            clientKeys[indexClientKeyValue] = query;
+                                    });
+
+                                    Ext.each(querySecretKeys, function(query, index) {
+                                        var secretKeyValueMatch = query.getName().match(/values\[(\d+)\]\[(\d+)\]/),
+                                            indexSecretKeyValue = secretKeyValueMatch[1];
+                                            secretKeys[indexSecretKeyValue] = query;
+                                    });
+
+                                    var clientKey = clientKeys[tabIndex].getValue(),
+                                    secretKey = secretKeys[tabIndex].getValue();
+
+                                if(clientKey.length > 0 && secretKey.length > 0){
+                                    return true;
+                                }else{
+                                    return false;
+                                }
+                            }
+                        }
                     })',
           'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
