@@ -7,20 +7,12 @@ use Hitmeister\Component\Api\Client;
 use Hitmeister\Component\Api\Transfers\Constants;
 use Shopware\Models\Order\Detail;
 use Shopware\Models\Order\Order;
+use Psr\Log\LoggerInterface;
+use Shopware\Models\Shop\Shop;
+use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
 
 class Ordering implements SubscriberInterface
 {
-    /** @var string */
-    private $carrierCode;
-
-    /**
-     * Ordering constructor.
-     * @param string $carrierCode
-     */
-    public function __construct($carrierCode)
-    {
-        $this->carrierCode = $carrierCode;
-    }
 
     /**
      * {@inheritDoc}
@@ -78,7 +70,7 @@ class Ordering implements SubscriberInterface
             foreach ($order->getDetails() as $detail) {
                 /** @var Detail $detail */
                 if (!in_array($detail->getAttribute()->getHmStatus(), array('canceled', 'sent'))) {
-                    $this->sendOrderDetails($detail, $order->getTrackingCode());
+                    $this->sendOrderDetails($detail, $order->getTrackingCode(), $order->getShop());
                 }
             }
         }
@@ -107,21 +99,35 @@ class Ordering implements SubscriberInterface
     /**
      * @param Detail $detail
      * @param $trackingCode
+     * @param Shop $shop
      * @throws \Exception
      */
-    private function sendOrderDetails(Detail $detail, $trackingCode)
+    private function sendOrderDetails(Detail $detail, $trackingCode, Shop $shop)
     {
         /** @var Client $api */
         $api = Shopware()->Container()->get('HmApi');
 
         try {
             $api->orderUnits()
-                ->send($detail->getAttribute()->getHmOrderUnitId(), $this->carrierCode, $trackingCode);
+                ->send($detail->getAttribute()->getHmOrderUnitId(), $this->getShopCarrier($shop->getId()), $trackingCode);
 
             Shopware()->Db()->executeUpdate(
                 'UPDATE s_order_details_attributes SET hm_status = ? WHERE detailID = ?',
                 array('sent', $detail->getId())
             );
         } catch (\Exception $e) {}
+    }
+
+
+    /**
+     * Get Default Carrier per Shop
+     * @return mixed
+     */
+    private function getShopCarrier($shopId) {
+
+        $shopConfig = HmShop::getShopConfigByShopId($shopId);
+        $defaultCarrier = $shopConfig->get('defaultCarrier');
+
+        return $defaultCarrier;
     }
 }

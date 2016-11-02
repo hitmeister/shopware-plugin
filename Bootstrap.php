@@ -175,11 +175,14 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
     {
         $path = $this->Path();
 
+        $shop = $args->getShop();
+        $config = $this->collection->getConfig($this->name, $shop);
+
         $subscribers = array(
             new ControllerPath($path),
-            new Resources($this->Config()),
+            new Resources($config),
             new Stock(),
-            new Ordering($this->Config()->get('defaultCarrier')),
+            new Ordering(),
         );
 
         /** @var $subject \Enlight_Controller_Action */

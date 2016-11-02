@@ -12,6 +12,7 @@ use Shopware\Models\Article\Detail;
 use Shopware\CustomModels\HitmeMarketplace\Stock;
 use Shopware\Models\Shop\Shop as SwShop;
 use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
+use Psr\Log\LoggerInterface;
 
 
 class StockManagement
@@ -249,6 +250,10 @@ class StockManagement
      */
     private function deleteAllUnits($detailId)
     {
+
+        /** @var LoggerInterface $logger */
+        $logger = Shopware()->Container()->get('pluginlogger');
+
         // Get all Stock Unit-Ids by detailID
         $q = sprintf('SELECT `unit_id` FROM `s_plugin_hitme_stock` WHERE `article_detail_id` = %d AND `unit_id` !=""', $detailId);
         $stmt = $this->connection->executeQuery($q);
@@ -274,8 +279,9 @@ class StockManagement
                 try {
                     // delete Unit in DB and on hitmeister.de
                     $this->deleteUnit($stock);
+
                 } catch (Exception $e) {
-                    $this->View()->assign(array('success' => false, 'message' => $e->getMessage()));
+                    $logger->error('Error on stock deleteAllUntits', array('number' => $detailId, 'exception' => $e));
                 }
 
             }
