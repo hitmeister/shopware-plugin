@@ -3,8 +3,10 @@
 use Hitmeister\Component\Api\Client;
 use Hitmeister\Component\Api\Transfers\Constants;
 use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
+use Shopware\Components\CSRFWhitelistAware;
+require_once __DIR__ . '/../../Components/CSRFWhitelistAware.php';
 
-class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_Backend_ExtJs
+class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_Backend_ExtJs implements CSRFWhitelistAware
 {
     public function getListAction()
     {
@@ -184,5 +186,19 @@ class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_
     private function getApiClient()
     {
         return $this->get('HmApi');
+    }
+
+    /**
+     * Whitelist notify- and webhook-actions
+     */
+    public function getWhitelistedCSRFActions()
+    {
+        return array(
+            'getList',
+            'changeStatusById',
+            'enableAll',
+            'disableAll',
+            'resetAll'
+        );
     }
 }

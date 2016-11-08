@@ -2,8 +2,10 @@
 
 use ShopwarePlugins\HitmeMarketplace\Components\StockManagement;
 use ShopwarePlugins\HitmeMarketplace\Components\Shop;
+use Shopware\Components\CSRFWhitelistAware;
+require_once __DIR__ . '/../../Components/CSRFWhitelistAware.php';
 
-class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backend_ExtJs
+class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backend_ExtJs implements CSRFWhitelistAware
 {
     public function getListAction()
     {
@@ -135,7 +137,7 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
 
             $totalBuilder
                 ->select('COUNT(d.id)')
-                ->from('s_articles_details', 'd')
+//                ->from('s_articles_details', 'dd')
                 ->where($where);
 
             $data = $builder->execute()->fetchAll(PDO::FETCH_ASSOC);
@@ -369,5 +371,20 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
     private function getStockManagement()
     {
         return $this->get('HmStockManagement');
+    }
+
+    /**
+     * Whitelist notify- and webhook-actions
+     */
+    public function getWhitelistedCSRFActions()
+    {
+        return array(
+            'getList',
+            'changeStatusById',
+            'changeShippinggroupById',
+            'syncStockById',
+            'readyForSync',
+            'changeStatusAll'
+        );
     }
 }

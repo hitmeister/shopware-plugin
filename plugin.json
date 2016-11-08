@@ -4,7 +4,7 @@
     "en": "Hitmeister.de Online shopping portal"
   },
   "menu_label": "Hitmeister.de",
-  "currentVersion": "2.0.1",
+  "currentVersion": "2.1.0",
   "author": "Hitmeister GmbH",
   "copyright": "Copyright © 2015, Hitmeister GmbH",
   "license": "proprietary",
@@ -12,6 +12,7 @@
   "link": "https://www.hitmeister.de",
   "changelog": {
     "de": {
+      "2.1.0": "Update for SW 5.2.x",
       "2.0.1": "Add Carrier- and Trackingcode-Functionality",
       "2.0.0": "Add Subshop-Functionality",
       "1.0.10": "Upgrade Hitmeister SDK",
@@ -27,7 +28,7 @@
       "1.0.0": "First release"
     },
     "en": {
-      "2.0.1": "Add Carrier- and Trackingcode-Functionality",
+      "2.1.0": "Update for SW 5.2.x",
       "2.0.0": "Add Subshop-Functionality",
       "1.0.10": "Upgrade Hitmeister SDK",
       "1.0.9": "Fix issue with missing attributes of article;",
@@ -43,7 +44,7 @@
     }
   },
   "compatibility": {
-    "minimumVersion": "5.0.0",
-    "maximumVersion": "5.1.6"
+    "minimumVersion": "5.2.0",
+    "maximumVersion": null
   }
 }

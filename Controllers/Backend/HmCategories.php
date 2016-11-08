@@ -1,8 +1,10 @@
 <?php
 
 use ShopwarePlugins\HitmeMarketplace\Components\CategoryFetcher;
+use Shopware\Components\CSRFWhitelistAware;
+require_once __DIR__ . '/../../Components/CSRFWhitelistAware.php';
 
-class Shopware_Controllers_Backend_HmCategories extends Shopware_Controllers_Backend_ExtJs
+class Shopware_Controllers_Backend_HmCategories extends Shopware_Controllers_Backend_ExtJs implements CSRFWhitelistAware
 {
     /**
      * Returns local categories
@@ -94,5 +96,17 @@ class Shopware_Controllers_Backend_HmCategories extends Shopware_Controllers_Bac
     private function getCategoryFetcher()
     {
         return $this->get('HmCategoryFetcher');
+    }
+
+    /**
+     * Whitelist notify- and webhook-actions
+     */
+    public function getWhitelistedCSRFActions()
+    {
+        return array(
+            'getLocalList',
+            'getTree',
+            'updateMap'
+        );
     }
 }

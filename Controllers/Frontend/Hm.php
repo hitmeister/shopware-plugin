@@ -4,8 +4,10 @@ use Psr\Log\LoggerInterface;
 use Hitmeister\Component\Api\Transfers\Constants;
 use ShopwarePlugins\HitmeMarketplace\Components\Exporter;
 use ShopwarePlugins\HitmeMarketplace\Components\Ordering;
+use Shopware\Components\CSRFWhitelistAware;
+require_once __DIR__ . '/../../Components/CSRFWhitelistAware.php';
 
-class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
+class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action implements \Shopware\Components\CSRFWhitelistAware
 {
     /**
      * {@inheritDoc}
@@ -185,5 +187,18 @@ class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action
     public function getOrderService()
     {
         return $this->get('HmOrdering');
+    }
+
+    /**
+     * Whitelist notify- and webhook-actions
+     */
+    public function getWhitelistedCSRFActions()
+    {
+        return array(
+            'notifications',
+            'export',
+            'flushCommand',
+            'version'
+        );
     }
 }
