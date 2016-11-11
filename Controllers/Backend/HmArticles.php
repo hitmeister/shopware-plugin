@@ -137,7 +137,7 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
 
             $totalBuilder
                 ->select('COUNT(d.id)')
-//                ->from('s_articles_details', 'dd')
+//                ->from('s_articles_details', 'd')
                 ->where($where);
 
             $data = $builder->execute()->fetchAll(PDO::FETCH_ASSOC);

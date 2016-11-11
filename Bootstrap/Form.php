@@ -75,6 +75,7 @@ class Form
         $this->form->setElement('select', 'syncStatus', array(
           'label' => 'Stock: Sync status',
           'description' => 'Bitte legen Sie den globalen Sync Status für den Subshop fest. ACHTUNG: Wenn sie Artikel eines Shops bei Hitmeister blocken oder löschen wollen, dann müssen Sie den entsprechenden Aufruf vorher im Hitmeister Modul starten.',
+          'value' => 0,
           'required' => true,
           'store' => array(
             array(1, 'Aktiviert'),
