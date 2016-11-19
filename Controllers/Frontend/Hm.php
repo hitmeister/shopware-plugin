@@ -196,6 +196,7 @@ class Shopware_Controllers_Frontend_Hm extends Enlight_Controller_Action impleme
     {
         return array(
             'notifications',
+            'processNotification',
             'export',
             'flushCommand',
             'version'
