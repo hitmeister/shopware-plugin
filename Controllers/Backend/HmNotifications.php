@@ -41,7 +41,10 @@ class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_
         $status = $this->Request()->getParam('status', 0);
 
         try {
-            $res = $status ? $this->enableById($notificationId) : $this->disableById($notificationId);
+            $shopUrl = HmShop::getShopUrl($shopId);
+            $callback = $shopUrl . "Hm/notifications";
+
+            $res = $status ? $this->enableById($notificationId, $callback) : $this->disableById($notificationId);
             $this->View()->assign(array('success' => $res));
         } catch (Exception $e) {
             $this->View()->assign(array('success' => false, 'message' => $e->getMessage()));
@@ -56,6 +59,9 @@ class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_
         }
 
         try {
+            $shopUrl = HmShop::getShopUrl($shopId);
+            $callback = $shopUrl . "Hm/notifications";
+
             $cursor = $this->getApiClient()
                 ->subscriptions()
                 ->find();
@@ -63,7 +69,8 @@ class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_
             $exclude = array();
             foreach ($cursor as $subscription) {
                 if (!$subscription->is_active) {
-                    $this->enableById($subscription->id_subscription);
+
+                    $this->enableById($subscription->id_subscription, $callback);
                 }
 
                 $exclude[] = $subscription->event_name;
@@ -154,12 +161,13 @@ class Shopware_Controllers_Backend_HmNotifications extends Shopware_Controllers_
     }
 
     /**
-     * @param int $hmId
+     * @param $hmId
+     * @param $callbackUrl
      * @return bool
      */
-    private function enableById($hmId)
+    private function enableById($hmId, $callbackUrl)
     {
-        return $this->getApiClient()->subscriptions()->update($hmId, null, null, null, true);
+        return $this->getApiClient()->subscriptions()->update($hmId, null, $callbackUrl, null, true);
     }
 
     /**
