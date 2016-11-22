@@ -29,6 +29,7 @@
     },
     "en": {
       "2.1.0": "Update for SW 5.2.x",
+      "2.0.1": "Add Carrier- and Trackingcode-Functionality",
       "2.0.0": "Add Subshop-Functionality",
       "1.0.10": "Upgrade Hitmeister SDK",
       "1.0.9": "Fix issue with missing attributes of article;",

@@ -53,10 +53,11 @@ class Form
             'afterSubTpl' => '<h2>Ablauf Plugininstallation</h2>
             <ul>
             <li>* Installation</li>
-            <li>* Api-Credetials eintragen</li>
+            <li>* Api-Credentials eintragen</li>
             <li>* speichern</li>
             <li>* aktivieren</li>
             <li>* Shippinggroups auswählen</li>
+            <li>* Stock: Sync-Status aktivieren</li>
             <li>* speichern</li>
             <li>* installation abgeschlossen</li>
             </ul>',
