@@ -2,6 +2,7 @@
 
 namespace ShopwarePlugins\HitmeMarketplace\Components;
 
+use Psr\Log\LoggerInterface;
 use Doctrine\DBAL\Connection;
 use Hitmeister\Component\Api\Client;
 use Hitmeister\Component\Api\Transfers\AddressTransfer;
@@ -10,11 +11,10 @@ use Hitmeister\Component\Api\Transfers\OrderUnitTransfer;
 use Shopware\Models\Article\Article;
 use Shopware\Models\Article\Detail as ArticleDetail;
 use Shopware\Models\Country\Country;
-use Shopware\Models\Customer\Billing;
+use Shopware\Models\Customer\Address;
 use Shopware\Models\Customer\Customer;
-use Shopware\Models\Customer\Billing as CustomerBilling;
-use Shopware\Models\Customer\Shipping as CustomerShipping;
-use Shopware\Models\Customer\Shipping;
+use Shopware\Models\Customer\Address as CustomerBilling;
+use Shopware\Models\Customer\Address as CustomerShipping;
 use Shopware\Models\Dispatch\Dispatch;
 use Shopware\Models\Order\Order;
 use Shopware\Models\Order\Billing as OrderBilling;
@@ -81,8 +81,8 @@ class Ordering
 
         /** @var Order $orderModel */
         $orderModel = Shopware()->Models()->find('Shopware\Models\Order\Order', $orderId);
-
         $customerModel = $this->getCustomer($hmOrder->buyer->email, $hmOrder->billing_address, $hmOrder->shipping_address);
+
         $orderModel->setCustomer($customerModel);
 
         $dispatchModel = $this->getDeliveryMethod();
@@ -150,10 +150,10 @@ class Ordering
 
         $orderModel->setAttribute($orderAttributeModel);
 
-        $billingModel = $this->createBillingAddress($customerModel->getBilling());
+        $billingModel = $this->createBillingAddress($customerModel->getDefaultBillingAddress());
         $orderModel->setBilling($billingModel);
 
-        $shippingModel = $this->createShippingAddress($customerModel->getShipping());
+        $shippingModel = $this->createShippingAddress($customerModel->getDefaultShippingAddress());
         $orderModel->setShipping($shippingModel);
 
         $paymentInstance = $this->preparePaymentInstance($orderModel);
@@ -192,10 +192,13 @@ class Ordering
         $customer->setEmail($email);
         $customer->setGroup($this->getShop()->getCustomerGroup());
         $customer->setPaymentId(Shopware()->Config()->get('paymentdefault'));
+        $customer->setSalutation($billing->gender=='female'?'ms':'mr');
+        $customer->setFirstName($billing->first_name?:'');
+        $customer->setLastName($billing->last_name?:'');
 
-        $billAddress = new Billing();
+        $billAddress = new Address();
         $billAddress->setSalutation($billing->gender=='female'?'ms':'mr');
-        $billAddress->setCountryId($this->getCountryId($billing->country));
+        $billAddress->setCountry(Shopware()->Models()->find('Shopware\Models\Country\Country', $this->getCountryId($billing->country)));
         $billAddress->setFirstName($billing->first_name?:'');
         $billAddress->setLastName($billing->last_name?:'');
         $billAddress->setCompany($billing->company_name?:'');
@@ -205,9 +208,9 @@ class Ordering
         $billAddress->setPhone($billing->phone?:'');
         $billAddress->setAdditionalAddressLine1($billing->additional_field?:'');
 
-        $shipAddress = new Shipping();
+        $shipAddress = new Address();
         $shipAddress->setSalutation($shipping->gender=='female'?'ms':'mr');
-        $shipAddress->setCountryId($this->getCountryId($shipping->country));
+        $shipAddress->setCountry(Shopware()->Models()->find('Shopware\Models\Country\Country', $this->getCountryId($shipping->country)));
         $shipAddress->setFirstName($shipping->first_name?:'');
         $shipAddress->setLastName($shipping->last_name?:'');
         $shipAddress->setCompany($shipping->company_name?:'');
@@ -216,11 +219,16 @@ class Ordering
         $shipAddress->setCity($shipping->city?:'');
         $shipAddress->setAdditionalAddressLine1($shipping->additional_field?:'');
 
-        $customer->setBilling($billAddress);
-        $customer->setShipping($shipAddress);
+        // Create Customer
+        $registerService = Shopware()->Container()->get('shopware_account.register_service');
 
-        Shopware()->Models()->persist($customer);
-        Shopware()->Models()->flush();
+        /** @var Shopware\Bundle\StoreFrontBundle\Struct\ShopContextInterface $context */
+        $context = Shopware()->Container()->get('shopware_storefront.context_service')->getShopContext();
+
+        /** @var Shopware\Bundle\StoreFrontBundle\Struct\Shop $shop */
+        $context = $context->getShop();
+
+        $registerService->register($context, $customer, $billAddress, $shipAddress);
 
         return $customer;
     }
@@ -396,18 +404,16 @@ class Ordering
         $billingOrderModel->setAdditionalAddressLine2($billingCustomerModel->getAdditionalAddressLine2());
         $billingOrderModel->setVatId($billingCustomerModel->getVatId());
         $billingOrderModel->setPhone($billingCustomerModel->getPhone());
-        $billingOrderModel->setFax($billingCustomerModel->getFax());
         $billingOrderModel->setCompany($billingCustomerModel->getCompany());
-        $billingOrderModel->setDepartment($billingCustomerModel->getDepartment());
-        $billingOrderModel->setNumber($billingCustomerModel->getNumber());
+        $billingOrderModel->setDepartment("");
         $billingOrderModel->setCustomer($billingCustomerModel->getCustomer());
 
-        if ($billingCustomerModel->getCountryId()) {
-            $billingOrderModel->setCountry(Shopware()->Models()->find('Shopware\Models\Country\Country', $billingCustomerModel->getCountryId()));
+        if ($billingCustomerModel->getCountry()) {
+            $billingOrderModel->setCountry($billingCustomerModel->getCountry());
         }
 
-        if ($billingCustomerModel->getStateId()) {
-            $billingOrderModel->setState(Shopware()->Models()->find('Shopware\Models\Country\State', $billingCustomerModel->getStateId()));
+        if ($billingCustomerModel->getState()) {
+            $billingOrderModel->setState($billingCustomerModel->getState());
         }
 
         return $billingOrderModel;
@@ -432,15 +438,15 @@ class Ordering
         $shippingOrderModel->setAdditionalAddressLine1($addressHolderModel->getAdditionalAddressLine1());
         $shippingOrderModel->setAdditionalAddressLine2($addressHolderModel->getAdditionalAddressLine2());
         $shippingOrderModel->setCompany($addressHolderModel->getCompany());
-        $shippingOrderModel->setDepartment($addressHolderModel->getDepartment());
+        $shippingOrderModel->setDepartment("");
         $shippingOrderModel->setCustomer($addressHolderModel->getCustomer());
 
-        if ($addressHolderModel->getCountryId()) {
-            $shippingOrderModel->setCountry(Shopware()->Models()->find('Shopware\Models\Country\Country', $addressHolderModel->getCountryId()));
+        if ($addressHolderModel->getCountry()) {
+            $shippingOrderModel->setCountry($addressHolderModel->getCountry());
         }
 
-        if ($addressHolderModel->getStateId()) {
-            $shippingOrderModel->setState(Shopware()->Models()->find('Shopware\Models\Country\State', $addressHolderModel->getStateId()));
+        if ($addressHolderModel->getState()) {
+            $shippingOrderModel->setState($addressHolderModel->getState());
         }
 
         return $shippingOrderModel;

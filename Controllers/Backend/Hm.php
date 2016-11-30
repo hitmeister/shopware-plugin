@@ -2,8 +2,10 @@
 
 use Hitmeister\Component\Api\Client;
 use ShopwarePlugins\HitmeMarketplace\Components\Shop;
+use Shopware\Components\CSRFWhitelistAware;
+require_once __DIR__ . '/../../Components/CSRFWhitelistAware.php';
 
-class Shopware_Controllers_Backend_Hm extends Shopware_Controllers_Backend_ExtJs
+class Shopware_Controllers_Backend_Hm extends Shopware_Controllers_Backend_ExtJs implements CSRFWhitelistAware
 {
     public function checkConfigAction()
     {
@@ -108,5 +110,17 @@ class Shopware_Controllers_Backend_Hm extends Shopware_Controllers_Backend_ExtJs
     private function resetApiClient()
     {
         Shopware()->Container()->reset('HmApi');
+    }
+
+    /**
+     * Whitelist notify- and webhook-actions
+     */
+    public function getWhitelistedCSRFActions()
+    {
+        return array(
+            'checkConfig',
+            'getActiveShops',
+            'getShippingGroups'
+        );
     }
 }

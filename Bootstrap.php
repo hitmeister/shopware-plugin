@@ -263,7 +263,7 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
             'action' => 'Index',
             'active' => 1,
             'class' => 'hitmeister-icon',
-            'parent' => $this->Menu()->findOneBy('label', 'Marketing'),
+            'parent' => $this->Menu()->findOneBy(['label' => 'Marketing'])
         ));
     }
 
