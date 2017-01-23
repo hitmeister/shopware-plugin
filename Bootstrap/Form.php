@@ -29,7 +29,7 @@ class Form
      */
     public function create()
     {
-        $this->form->setDescription('<p>Hitmeister ist eines der größten deutschen Online-Shopping-Portale mitten im Herzen von Köln. 100% sicheres, einfaches, günstiges und persönliches Einkaufs- und Verkaufserlebnis. Die Zahlungsabwicklung und auch sämtliche Marketingmaßnahmen werden von Hitmeister übernommen. Angebote werden anhand der EAN eingestellt, die Abrechnung erfolgt anhand eines einfachen Gebührenmodells. Bei Fragen steht Ihnen die Händlerbetreuung telefonisch unter <b>+49-221-975979-79</b> oder per E-Mail an <b>partnermanagement@hitmeister.de</b> gerne zur Verfügung.</p><p>Um zu starten, bitten wir Sie die unten abgefragten Informationen zu hinterlegen, damit die Abwicklung zwischen Ihrem System und Hitmeister reibungslos funktioniert.  Einige der Informationen finden Sie in Ihrem Hitmeister-Versandpartner Account unter Shopeinstellungen, daher bitten wir Sie, sich parallel in Ihrem Hitmeister-Account einzuloggen.</p>');
+        $this->form->setDescription('<p>Real ist eines der größten deutschen Online-Shopping-Portale mitten im Herzen von Köln. 100% sicheres, einfaches, günstiges und persönliches Einkaufs- und Verkaufserlebnis. Die Zahlungsabwicklung und auch sämtliche Marketingmaßnahmen werden von Hitmeister übernommen. Angebote werden anhand der EAN eingestellt, die Abrechnung erfolgt anhand eines einfachen Gebührenmodells. Bei Fragen steht Ihnen die Händlerbetreuung telefonisch unter <b>+49-221-975979-79</b> oder per E-Mail an <b>partnermanagement@real.de</b> gerne zur Verfügung.</p><p>Um zu starten, bitten wir Sie die unten abgefragten Informationen zu hinterlegen, damit die Abwicklung zwischen Ihrem System und Hitmeister reibungslos funktioniert.  Einige der Informationen finden Sie in Ihrem Real-Versandpartner Account unter Shopeinstellungen, daher bitten wir Sie, sich parallel in Ihrem Real-Account einzuloggen.</p>');
 
         $this->form->setElement('button', 'openForm', array(
             'label' => 'Jetzt registrieren!',
@@ -235,6 +235,72 @@ class Form
                 array(Constants::CARRIER_CODE_TRANS_O_FLEX, Constants::CARRIER_CODE_TRANS_O_FLEX),
                 array(Constants::CARRIER_CODE_UPS, Constants::CARRIER_CODE_UPS),
             ),
+            'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
+        ));
+
+        // Custom article attributes
+        $this->form->setElement('combo', 'customArticleAttributes', array(
+            'itemId' => 'customArticleAttributes',
+            'label' => 'Article attributes',
+            'valueField'=>'name',
+            'displayField'=>'name',
+            'description' => 'Select the articles attributes you want to export',
+            'value' => '',
+            'emptyText'=>'Select articles attributes',
+            'multiSelect' => true,
+            'queryMode' => 'local',
+            'queryCaching' => 'false',
+            'store' => 'new Ext.data.Store({
+                        parent: this,
+                        fields: [
+                            { name: "name", type: "string", useNull: false },
+                            { name: "label", type: "string", useNull: false }
+                        ],
+                        proxy : {
+                         type : "ajax",
+                         api : {
+                             read: document.location.pathname + \'HmArticlesAttributes/getList\',
+                         },
+                         reader : {
+                             type : "json",
+                             root : "data",
+                             totalProperty: "total"
+                         }
+                        },
+                        listeners : {
+                            beforeload: function(store, operation, options){
+                                var combo = store.parent,
+                                    comboName = combo.getName(),
+                                    regExpMatch = comboName.match(/values\[(\d+)\]\[(\d+)\]/),
+                                    tabIndex = regExpMatch[1],
+                                    queryClientKeys = Ext.ComponentQuery.query("[itemId=hmClientKey]"),
+                                    querySecretKeys = Ext.ComponentQuery.query("[itemId=hmSecretKey]"),
+                                    clientKeys = [],
+                                    secretKeys = [];
+
+                                    Ext.each(queryClientKeys, function(query, index) {
+                                        var clientKeyValueMatch = query.getName().match(/values\[(\d+)\]\[(\d+)\]/),
+                                            indexClientKeyValue = clientKeyValueMatch[1];
+                                            clientKeys[indexClientKeyValue] = query;
+                                    });
+
+                                    Ext.each(querySecretKeys, function(query, index) {
+                                        var secretKeyValueMatch = query.getName().match(/values\[(\d+)\]\[(\d+)\]/),
+                                            indexSecretKeyValue = secretKeyValueMatch[1];
+                                            secretKeys[indexSecretKeyValue] = query;
+                                    });
+
+                                    var clientKey = clientKeys[tabIndex].getValue(),
+                                    secretKey = secretKeys[tabIndex].getValue();
+
+                                if(clientKey.length > 0 && secretKey.length > 0){
+                                    return true;
+                                }else{
+                                    return false;
+                                }
+                            }
+                        }
+                    })',
             'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
         ));
     }

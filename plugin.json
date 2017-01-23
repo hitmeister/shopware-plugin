@@ -1,17 +1,18 @@
 {
   "label": {
-    "de": "Hitmeister.de Online-Shoppingportal",
-    "en": "Hitmeister.de Online shopping portal"
+    "de": "real.de - Ihr Marktplatz",
+    "en": "real.de - Online shopping portal"
   },
-  "menu_label": "Hitmeister.de",
-  "currentVersion": "2.1.0",
-  "author": "Hitmeister GmbH",
-  "copyright": "Copyright © 2015, Hitmeister GmbH",
+  "menu_label": "real.de",
+  "currentVersion": "2.1.1",
+  "author": "real,- SB-Warenhaus GmbH",
+  "copyright": "Copyright © 2015, real,- SB-Warenhaus GmbH",
   "license": "proprietary",
-  "support": "support@hitmeister.de",
-  "link": "https://www.hitmeister.de",
+  "support": "support@real.de",
+  "link": "https://www.real.de",
   "changelog": {
     "de": {
+      "2.1.1": "Add custom attributes",
       "2.1.0": "Update for SW 5.2.x",
       "2.0.1": "Add Carrier- and Trackingcode-Functionality",
       "2.0.0": "Add Subshop-Functionality",
@@ -28,6 +29,7 @@
       "1.0.0": "First release"
     },
     "en": {
+      "2.1.1": "Add custom attributes",
       "2.1.0": "Update for SW 5.2.x",
       "2.0.1": "Add Carrier- and Trackingcode-Functionality",
       "2.0.0": "Add Subshop-Functionality",

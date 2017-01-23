@@ -107,9 +107,9 @@ class Ordering
         $orderModel->setInvoiceShipping(0);
 
         $orderModel->setOrderTime(new \DateTime('now'));
-        $orderModel->setDeviceType('Hitmeister.de');
+        $orderModel->setDeviceType('real.de');
 
-        $orderModel->setTransactionId('');
+        $orderModel->setTransactionId($hmOrder->id_order);
         $orderModel->setComment('');
         $orderModel->setCustomerComment('');
         $orderModel->setInternalComment('');

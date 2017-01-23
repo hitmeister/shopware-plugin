@@ -27,31 +27,35 @@ class Resources implements SubscriberInterface
      */
     public static function getSubscribedEvents()
     {
-        return array(
+        return [
             'Enlight_Bootstrap_InitResource_HmApi' => 'onInitApi',
             'Enlight_Bootstrap_InitResource_HmCategoryFetcher' => 'onInitCategoryFetcher',
             'Enlight_Bootstrap_InitResource_HmStockManagement' => 'onInitStockManagement',
             'Enlight_Bootstrap_InitResource_HmExporter' => 'onInitExporter',
             'Enlight_Bootstrap_InitResource_HmOrdering' => 'onInitOrdering',
-        );
+        ];
     }
 
     /**
-     * @return \Hitmeister\Component\Api\Client
+     * @return bool|\Hitmeister\Component\Api\Client
      * @throws \Exception
      */
     public function onInitApi()
     {
         $shopConfig = $this->config;
-        if(Shopware()->Front()->Request()->has('shopId')){
+        if (Shopware()->Front()->Request()->has('shopId')) {
             $shopId = (int)Shopware()->Front()->Request()->getParam('shopId');
-            if(!empty($shopId)){
+            if (!empty($shopId)) {
                 $shopConfig = Shop::getShopConfigByShopId($shopId);
             }
         }
         $apiUrl = $shopConfig->get('apiUrl');
         $clientKey = $shopConfig->get('clientKey');
         $secretKey = $shopConfig->get('secretKey');
+
+        if ($clientKey === null || $secretKey === null) {
+            return false;
+        }
 
         $builder = new ClientBuilder();
         $builder
