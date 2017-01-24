@@ -141,6 +141,9 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
         Callback::uninstall($this->getVersion());
         Schema::drop();
 
+        // delete Menu Snippet
+        Shopware()->Db()->exec('DELETE FROM s_core_snippets WHERE `name` = "Hm" AND `namespace` = "backend/index/view/main";');
+
         return array('success' => true, 'invalidateCache' => array('backend', 'proxy'));
     }
 
@@ -262,7 +265,7 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
             'controller' => 'Hm',
             'action' => 'Index',
             'active' => 1,
-            'class' => 'hitmeister-icon',
+            'class' => 'real-icon',
             'parent' => $this->Menu()->findOneBy(['label' => 'Marketing'])
         ));
     }
