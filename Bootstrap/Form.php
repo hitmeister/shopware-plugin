@@ -29,7 +29,7 @@ class Form
      */
     public function create()
     {
-        $this->form->setDescription('<p>Hitmeister ist eines der größten deutschen Online-Shopping-Portale mitten im Herzen von Köln. 100% sicheres, einfaches, günstiges und persönliches Einkaufs- und Verkaufserlebnis. Die Zahlungsabwicklung und auch sämtliche Marketingmaßnahmen werden von Hitmeister übernommen. Angebote werden anhand der EAN eingestellt, die Abrechnung erfolgt anhand eines einfachen Gebührenmodells. Bei Fragen steht Ihnen die Händlerbetreuung telefonisch unter <b>+49-221-975979-79</b> oder per E-Mail an <b>partnermanagement@hitmeister.de</b> gerne zur Verfügung.</p><p>Um zu starten, bitten wir Sie die unten abgefragten Informationen zu hinterlegen, damit die Abwicklung zwischen Ihrem System und Hitmeister reibungslos funktioniert.  Einige der Informationen finden Sie in Ihrem Hitmeister-Versandpartner Account unter Shopeinstellungen, daher bitten wir Sie, sich parallel in Ihrem Hitmeister-Account einzuloggen.</p>');
+        $this->form->setDescription('<p>Real ist eines der größten deutschen Online-Shopping-Portale mitten im Herzen von Köln. 100% sicheres, einfaches, günstiges und persönliches Einkaufs- und Verkaufserlebnis. Die Zahlungsabwicklung und auch sämtliche Marketingmaßnahmen werden von Hitmeister übernommen. Angebote werden anhand der EAN eingestellt, die Abrechnung erfolgt anhand eines einfachen Gebührenmodells. Bei Fragen steht Ihnen die Händlerbetreuung telefonisch unter <b>+49-221-975979-79</b> oder per E-Mail an <b>partnermanagement@real.de</b> gerne zur Verfügung.</p><p>Um zu starten, bitten wir Sie die unten abgefragten Informationen zu hinterlegen, damit die Abwicklung zwischen Ihrem System und Hitmeister reibungslos funktioniert.  Einige der Informationen finden Sie in Ihrem Real-Versandpartner Account unter Shopeinstellungen, daher bitten wir Sie, sich parallel in Ihrem Real-Account einzuloggen.</p>');
 
         $this->form->setElement('button', 'openForm', array(
             'label' => 'Jetzt registrieren!',
@@ -53,10 +53,11 @@ class Form
             'afterSubTpl' => '<h2>Ablauf Plugininstallation</h2>
             <ul>
             <li>* Installation</li>
-            <li>* Api-Credetials eintragen</li>
+            <li>* Api-Credentials eintragen</li>
             <li>* speichern</li>
             <li>* aktivieren</li>
             <li>* Shippinggroups auswählen</li>
+            <li>* Stock: Sync-Status aktivieren</li>
             <li>* speichern</li>
             <li>* installation abgeschlossen</li>
             </ul>',
@@ -75,6 +76,7 @@ class Form
         $this->form->setElement('select', 'syncStatus', array(
           'label' => 'Stock: Sync status',
           'description' => 'Bitte legen Sie den globalen Sync Status für den Subshop fest. ACHTUNG: Wenn sie Artikel eines Shops bei Hitmeister blocken oder löschen wollen, dann müssen Sie den entsprechenden Aufruf vorher im Hitmeister Modul starten.',
+          'value' => 0,
           'required' => true,
           'store' => array(
             array(1, 'Aktiviert'),

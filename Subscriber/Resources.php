@@ -53,6 +53,10 @@ class Resources implements SubscriberInterface
         $clientKey = $shopConfig->get('clientKey');
         $secretKey = $shopConfig->get('secretKey');
 
+        if ($clientKey === null || $secretKey === null) {
+            return false;
+        }
+
         $builder = new ClientBuilder();
         $builder
             ->setLogger(Shopware()->Container()->get('pluginlogger'))
