@@ -188,6 +188,7 @@ class Form
             'label' => 'Orders: Default delivery method',
             'description' => 'Bitte verknüpfen Sie Ihre Shopware Versandart.',
             'required' => true,
+            'queryCaching' => 'false',
             'value' => !empty($deliveryMethods) ? $deliveryMethods[0][0] : '',
             'store' => $deliveryMethods,
             'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
@@ -196,8 +197,9 @@ class Form
         $paymentMethods = Shopware()->Db()->fetchAll('SELECT id, name FROM s_core_paymentmeans', array(), \PDO::FETCH_NUM);
         $this->form->setElement('select', 'defaultPaymentMethod', array(
             'label' => 'Orders: Default payment method',
-            'description' => 'Bitte wählen Sie eine Bezahlmethode, die Ihrem System mitteilt, dass der Kauf bereits bezahlt ist, da Hitmeister die Zahlungsabwicklung für Sie übernimmt.',
+            'description' => 'Bitte wählen Sie eine Bezahlmethode, die Ihrem System mitteilt, dass der Kauf bereits bezahlt ist, da Real die Zahlungsabwicklung für Sie übernimmt.',
             'required' => true,
+            'queryCaching' => 'false',
             'value' => !empty($paymentMethods) ? $paymentMethods[0][0] : '',
             'store' => $paymentMethods,
             'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
