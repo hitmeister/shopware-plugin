@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-SRC_DIR=".."
-DIST_DIR="Backend/HitmeMarketplace"
+CURRENT_DIR=$( cd "$( dirname "$0" )" && pwd )
+SRC_DIR="${CURRENT_DIR}/.."
+DIST_DIR="${CURRENT_DIR}/Backend/HitmeMarketplace"
 IGNORE_LIST=(".git" ".gitignore" "build" "vendor" "composer.json" "composer.lock")
 
 rm -rf "${DIST_DIR}"
@@ -31,5 +32,6 @@ cp -rf "${SRC_DIR}/vendor/hitmeister/api-sdk/src" "${DIST_DIR}/Lib/Api"
 echo "SDK copied."
 
 echo "Making ZIP..."
+cd ${CURRENT_DIR}
 zip -r HitmeMarketplace.zip Backend
-rm -rf Backend
+rm -rf ${CURRENT_DIR}/Backend
