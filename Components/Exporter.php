@@ -3,6 +3,7 @@
 namespace ShopwarePlugins\HitmeMarketplace\Components;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DBALException;
 use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
 
 class Exporter
@@ -76,6 +77,8 @@ class Exporter
 
     /**
      * @param resource $handler
+     *
+     * @throws DBALException
      */
     private function buildFeed($handler)
     {
@@ -88,10 +91,11 @@ class Exporter
         $shopConfig = HmShop::getShopConfigByShopId($shopId);
         $shippingGroup = $shopConfig->get('defaultShippingGroup');
 
+        $customArticleAttributes = $shopConfig->get('customArticleAttributes');
+        $articlesAttributes = $this->getArticlesAttributes($customArticleAttributes);
+
         $limit = 100;
         $offset = 0;
-
-
 
         $sql = <<<SQL
 SELECT
@@ -110,12 +114,14 @@ SELECT
 	CASE WHEN u.unit IS NOT NULL
        THEN CONCAT_WS(' ', IFNULL(d.purchaseunit, 1), u.unit)
        ELSE ''
-    END AS content_volume
+    END AS content_volume,
+    $articlesAttributes
 FROM s_articles_details d
 INNER JOIN s_articles a ON (a.id = d.articleID)
 INNER JOIN s_articles_supplier s ON (s.id = a.supplierID)
 LEFT JOIN s_plugin_hitme_stock da ON (da.article_detail_id = d.id AND da.shop_id = ?)
 LEFT JOIN s_core_units u ON (u.id = d.unitID)
+INNER JOIN s_articles_attributes saa ON a.id = saa.articleID
 LEFT JOIN (
 	SELECT
 		cor.article_id,
@@ -138,10 +144,12 @@ SQL;
         $sql = sprintf($sql, StockManagement::STATUS_BLOCKED);
 
         $header = array('ean', 'title', 'description', 'short_description', 'picture', 'category', 'mpn', 'manufacturer', 'content_volume', 'shipping_group');
+        $header = $this->extendsHeader($header, $customArticleAttributes);
         $writeData = array();
 
         while (true) {
             $stmt = $this->connection->executeQuery($sql . sprintf(' LIMIT %d,%d', $offset, $limit), array($shippingGroup, $shopId, $categoryId));
+
             $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             if (empty($data)) {
                 break;
@@ -157,6 +165,7 @@ SQL;
                     $header[] = $attributeKey;
                 }
             }
+
             unset($attributeKeys);
 
             foreach ($data as $item) {
@@ -378,5 +387,27 @@ SQL;
         }
 
         return $pictures;
+    }
+
+    /**
+     * concatenate the articles attributes for the sql query
+     *
+     * @param $customArticleAttributes
+     *
+     * @return string
+     */
+    private function getArticlesAttributes($customArticleAttributes){
+        $select = [];
+        foreach ((array)$customArticleAttributes as $attribute){
+            $select[] = 'saa.'.$attribute;
+        }
+        return implode(', ', $select);
+    }
+
+    private function extendsHeader($header, $customArticleAttributes){
+        foreach ((array)$customArticleAttributes as $attribute){
+            $header[] = $attribute;
+        }
+        return $header;
     }
 }

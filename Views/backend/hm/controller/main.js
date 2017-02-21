@@ -16,7 +16,7 @@ Ext.define('Shopware.apps.Hm.controller.Main', {
     },
 
     /**
-     * Checks configuration of Hitmeister.de plugin
+     * Checks configuration of real.de plugin
      * @param callback
      */
     performCheckConfig: function(callback) {

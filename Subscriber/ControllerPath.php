@@ -3,6 +3,7 @@
 namespace ShopwarePlugins\HitmeMarketplace\Subscriber;
 
 use Enlight\Event\SubscriberInterface;
+use Enlight_Event_EventArgs;
 
 class ControllerPath implements SubscriberInterface
 {
@@ -30,7 +31,7 @@ class ControllerPath implements SubscriberInterface
     public static function getSubscribedEvents()
     {
         return array_fill_keys(
-            array(
+            [
                 'Enlight_Controller_Dispatcher_ControllerPath_Frontend_Hm',
 
                 'Enlight_Controller_Dispatcher_ControllerPath_Backend_Hm',
@@ -38,17 +39,26 @@ class ControllerPath implements SubscriberInterface
                 'Enlight_Controller_Dispatcher_ControllerPath_Backend_HmCategories',
                 'Enlight_Controller_Dispatcher_ControllerPath_Backend_HmExports',
                 'Enlight_Controller_Dispatcher_ControllerPath_Backend_HmNotifications',
-            ),
+                'Enlight_Controller_Dispatcher_ControllerPath_Backend_HmArticlesAttributes'
+            ],
             'onGetControllerPath');
     }
 
-    public function onGetControllerPath(\Enlight_Event_EventArgs $arguments)
+    /**
+     * returns controller path
+     *
+     * @param Enlight_Event_EventArgs $arguments
+     *
+     * @return null|string
+     */
+    public function onGetControllerPath(Enlight_Event_EventArgs $arguments)
     {
         Shopware()->Template()->addTemplateDir($this->bootstrapPath . 'Views');
 
         if (preg_match($this->regexp, $arguments->getName(), $m)) {
-            $path = sprintf('%sControllers/%s/Hm%s.php', $this->bootstrapPath, $m[1], $m[2]);
-            return $path;
+            return sprintf('%sControllers/%s/Hm%s.php', $this->bootstrapPath, $m[1], $m[2]);
+        } else {
+            return null;
         }
     }
 }

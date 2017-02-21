@@ -18,14 +18,19 @@ class Shopware_Controllers_Backend_Hm extends Shopware_Controllers_Backend_ExtJs
                     $this->Request()->setParam('shopId', $shop['id']);
                     $shopConfig = $shop['hm_config'];
                     $defaultShippingGroup = $shopConfig->get('defaultshippinggroup');
-                    $result = $this->getApiClient()->status()->ping();
-                    if( empty($result->message) ||
-                        empty($defaultShippingGroup)
-                    ){
+                    if ($this->getApiClient() !== false) {
+                        $result = $this->getApiClient()->status()->ping();
+                        if( empty($result->message) ||
+                            empty($defaultShippingGroup)
+                        ){
+                            $message = false;
+                            break;
+                        }else{
+                            $message = true;
+                        }
+                    } else {
                         $message = false;
                         break;
-                    }else{
-                        $message = true;
                     }
                 }
             }

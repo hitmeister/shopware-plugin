@@ -52,7 +52,6 @@ Ext.define('Shopware.apps.Hm', {
     launch: function () {
         var me = this,
             mainController = me.getController('Main');
-        console.log('launch');
         return mainController.mainWindow;
     }
 });
