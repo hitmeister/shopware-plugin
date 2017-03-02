@@ -62,8 +62,24 @@ class Stock implements SubscriberInterface
         /** @var StockManagement $manager */
         $manager = Shopware()->Container()->get('HmStockManagement');
 
+        /** @var \Shopware\Models\Shop\Shop $shop */
+        $shop = Shopware()->Models()->getRepository('Shopware\Models\Shop\Shop')->findOneBy(['default' => true]);
+
+        /** @var \Shopware\CustomModels\HitmeMarketplace\Stock $stock */
+        $stockRepository = Shopware()->Models()->getRepository('Shopware\CustomModels\HitmeMarketplace\Stock');
+        $builder = $stockRepository->createQueryBuilder('Stock')
+            ->where('Stock.shopId = :shopId')
+            ->andWhere('Stock.articleDetailId = :articleDetailId');
+
+        $builder->setParameters([
+            'shopId' => $shop->getId(),
+            'articleDetailId' => $detail->getId()
+        ]);
+
+        $stock = $builder->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_OBJECT);
+
         try {
-            $res = $manager->syncByArticleDetails($detail);
+            $res = $manager->syncByArticleDetails($detail, true, $stock, $shop);
             $logger->info('Stock auto update',  array('number' => $detail->getNumber(), 'res' => (int)$res));
         } catch (\Exception $e) {
             $logger->error('Error on stock sync', array('number' => $detail->getNumber(), 'exception' => $e));
