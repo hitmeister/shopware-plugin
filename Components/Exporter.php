@@ -20,7 +20,7 @@ class Exporter
 
     /**
      * @param Connection $connection
-     * @param string $cacheDir
+     * @param string     $cacheDir
      */
     public function __construct(Connection $connection, $cacheDir)
     {
@@ -30,7 +30,9 @@ class Exporter
 
     /**
      * @param string $id
+     *
      * @return bool|string
+     * @throws \Doctrine\DBAL\DBALException
      */
     public function getFeed($id)
     {
@@ -48,6 +50,7 @@ class Exporter
         $this->buildFeed($handler);
 
         fclose($handler);
+
         return $filename;
     }
 
@@ -65,6 +68,7 @@ class Exporter
 
     /**
      * @param string $id
+     *
      * @return string
      */
     private function getFilename($id)
@@ -72,6 +76,7 @@ class Exporter
         if (!file_exists($this->cacheDir . '/hm/')) {
             mkdir($this->cacheDir . '/hm/', 0777);
         }
+
         return $this->cacheDir . sprintf('/hm/product_feed_%s.csv', $id);
     }
 
@@ -92,7 +97,15 @@ class Exporter
         $shippingGroup = $shopConfig->get('defaultShippingGroup');
 
         $customArticleAttributes = $shopConfig->get('customArticleAttributes');
-        $articlesAttributes = $this->getArticlesAttributes($customArticleAttributes);
+        $articlesAttributes = $innerJoin = '';
+
+        $header = ['ean', 'title', 'description', 'short_description', 'picture', 'category', 'mpn', 'manufacturer', 'content_volume', 'shipping_group'];
+
+        if ($customArticleAttributes !== '') {
+            $articlesAttributes = $this->getArticlesAttributes($customArticleAttributes);
+            $innerJoin = 'INNER JOIN s_articles_attributes saa ON a.id = saa.articleID';
+            $header = $this->extendsHeader($header, $customArticleAttributes);
+        }
 
         $limit = 100;
         $offset = 0;
@@ -114,14 +127,14 @@ SELECT
 	CASE WHEN u.unit IS NOT NULL
        THEN CONCAT_WS(' ', IFNULL(d.purchaseunit, 1), u.unit)
        ELSE ''
-    END AS content_volume,
+    END AS content_volume
     $articlesAttributes
 FROM s_articles_details d
 INNER JOIN s_articles a ON (a.id = d.articleID)
 INNER JOIN s_articles_supplier s ON (s.id = a.supplierID)
+$innerJoin
 LEFT JOIN s_plugin_hitme_stock da ON (da.article_detail_id = d.id AND da.shop_id = ?)
 LEFT JOIN s_core_units u ON (u.id = d.unitID)
-INNER JOIN s_articles_attributes saa ON a.id = saa.articleID
 LEFT JOIN (
 	SELECT
 		cor.article_id,
@@ -142,13 +155,10 @@ WHERE
 SQL;
 
         $sql = sprintf($sql, StockManagement::STATUS_BLOCKED);
-
-        $header = array('ean', 'title', 'description', 'short_description', 'picture', 'category', 'mpn', 'manufacturer', 'content_volume', 'shipping_group');
-        $header = $this->extendsHeader($header, $customArticleAttributes);
-        $writeData = array();
+        $writeData = [];
 
         while (true) {
-            $stmt = $this->connection->executeQuery($sql . sprintf(' LIMIT %d,%d', $offset, $limit), array($shippingGroup, $shopId, $categoryId));
+            $stmt = $this->connection->executeQuery($sql . sprintf(' LIMIT %d,%d', $offset, $limit), [$shippingGroup, $shopId, $categoryId]);
 
             $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             if (empty($data)) {
@@ -169,7 +179,7 @@ SQL;
             unset($attributeKeys);
 
             foreach ($data as $item) {
-                $line = array();
+                $line = [];
 
                 foreach ($header as $title) {
                     switch ($title) {
@@ -225,6 +235,7 @@ SQL;
 
     /**
      * @param string $line
+     *
      * @return string
      */
     private function escape($line)
@@ -232,19 +243,22 @@ SQL;
         if (false !== strpos($line, ';')) {
             $line = '"' . str_replace('"', '""', $line) . '"';
         }
-        return str_replace(array("\n", "\r"), array('\n', '\t'), $line);
+
+        return str_replace(["\n", "\r"], ['\n', '\t'], $line);
     }
 
     /**
      * @param array $ids
+     *
      * @return array
+     * @throws \Doctrine\DBAL\DBALException
      */
     private function getCategories($ids)
     {
         $articleIds = array_unique(array_values($ids));
         $mapping = $this->getHmMapping($articleIds);
 
-        $data = array();
+        $data = [];
         foreach ($ids as $detailId => $detailArticleId) {
             if (isset($mapping[$detailArticleId])) {
                 $data[$detailId] = $mapping[$detailArticleId];
@@ -273,6 +287,7 @@ SQL;
 
     /**
      * @param array $articleIds
+     *
      * @return array
      * @throws \Doctrine\DBAL\DBALException
      */
@@ -286,7 +301,7 @@ WHERE cro.articleID IN (?) AND ca.hm_category_title IS NOT NULL
 GROUP BY cro.articleID;
 SQL;
 
-        $stmt = $this->connection->executeQuery($sql, array($articleIds), array(Connection::PARAM_INT_ARRAY));
+        $stmt = $this->connection->executeQuery($sql, [$articleIds], [Connection::PARAM_INT_ARRAY]);
         $mapping = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
         array_walk($mapping, function (&$value) {
             $items = explode('~|~', $value);
@@ -298,6 +313,7 @@ SQL;
 
     /**
      * @param array $articleIds
+     *
      * @return array
      * @throws \Doctrine\DBAL\DBALException
      */
@@ -311,7 +327,7 @@ WHERE ac.articleID IN (?)
 GROUP BY ac.articleID;
 SQL;
 
-        $stmt = $this->connection->executeQuery($sql, array($articleIds), array(Connection::PARAM_INT_ARRAY));
+        $stmt = $this->connection->executeQuery($sql, [$articleIds], [Connection::PARAM_INT_ARRAY]);
         $mapping = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
         array_walk($mapping, function (&$value) {
             $items = explode('~|~', $value);
@@ -323,6 +339,7 @@ SQL;
 
     /**
      * @param array $articleIds
+     *
      * @return array
      * @throws \Doctrine\DBAL\DBALException
      */
@@ -335,24 +352,25 @@ INNER JOIN s_article_configurator_options co ON (co.id = cor.option_id)
 INNER JOIN s_article_configurator_groups cg ON (cg.id = co.group_id)
 WHERE cor.article_id IN (?)
 SQL;
-        $stmt = $this->connection->executeQuery($sql, array($articleIds), array(Connection::PARAM_INT_ARRAY));
+        $stmt = $this->connection->executeQuery($sql, [$articleIds], [Connection::PARAM_INT_ARRAY]);
         $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        $keys = array();
-        $result = array();
+        $keys = [];
+        $result = [];
         foreach ($data as $item) {
             if (!isset($result[$item['article_id']])) {
-                $result[$item['article_id']] = array();
+                $result[$item['article_id']] = [];
             }
             $result[$item['article_id']][$item['key']] = $item['value'];
             $keys[] = $item['key'];
         }
 
-        return array($result, array_unique($keys));
+        return [$result, array_unique($keys)];
     }
 
     /**
      * @param array $articleIds
+     *
      * @return array
      * @throws \Doctrine\DBAL\DBALException
      */
@@ -364,10 +382,10 @@ FROM s_articles_img im
 INNER JOIN s_articles_img imm ON (im.parent_id = imm.id)
 WHERE im.article_detail_id IN (?);
 SQL;
-        $stmt = $this->connection->executeQuery($sql, array($articleIds), array(Connection::PARAM_INT_ARRAY));
+        $stmt = $this->connection->executeQuery($sql, [$articleIds], [Connection::PARAM_INT_ARRAY]);
         $pictures = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
 
-        $notFound = array();
+        $notFound = [];
         foreach ($articleIds as $articleId) {
             if (!isset($pictures[$articleId])) {
                 $notFound[] = $articleId;
@@ -382,7 +400,7 @@ LEFT JOIN s_articles_img im ON (im.articleID = d.articleID)
 WHERE d.id IN (?)
 SQL;
 
-            $stmt = $this->connection->executeQuery($sql, array($notFound), array(Connection::PARAM_INT_ARRAY));
+            $stmt = $this->connection->executeQuery($sql, [$notFound], [Connection::PARAM_INT_ARRAY]);
             $pictures += $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
         }
 
@@ -396,18 +414,33 @@ SQL;
      *
      * @return string
      */
-    private function getArticlesAttributes($customArticleAttributes){
+    private function getArticlesAttributes($customArticleAttributes)
+    {
         $select = [];
-        foreach ((array)$customArticleAttributes as $attribute){
-            $select[] = 'saa.'.$attribute;
+        foreach ((array)$customArticleAttributes as $attribute) {
+
+            if ($attribute !== '' && strlen($attribute) > 0) {
+                $select[] = 'saa.' . $attribute;
+            }
         }
-        return implode(', ', $select);
+
+        return count(array_filter($select)) > 0 ? ', ' . implode(', ', $select): '';
     }
 
-    private function extendsHeader($header, $customArticleAttributes){
-        foreach ((array)$customArticleAttributes as $attribute){
+    /**
+     * extends the csv file header
+     *
+     * @param $header
+     * @param $customArticleAttributes
+     *
+     * @return array
+     */
+    private function extendsHeader($header, $customArticleAttributes)
+    {
+        foreach ((array)$customArticleAttributes as $attribute) {
             $header[] = $attribute;
         }
+
         return $header;
     }
 }
