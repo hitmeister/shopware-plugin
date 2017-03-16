@@ -101,7 +101,7 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
 
             if(!empty($categoryId)){
                 $filterShopBuilder->where('cat.categoryID = :filter_shop');
-                $builder->setParameter(':filter_shop', $categoryId);
+                $filterShopBuilder->setParameter(':filter_shop', $categoryId);
             }else{
                 $hmActiveShops = Shop::getActiveShops();
                 $hmActiveShopsCatIds = array_map(function ($item) {return $item['category_id'];}, $hmActiveShops);
@@ -115,7 +115,7 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
             }
 
             $where->add(
-              $builder->expr()->in('d.articleID', $filterShopBuilder->getSQL())
+                $builder->expr()->in('d.articleID', $filterShopBuilder->execute()->fetchAll(PDO::FETCH_COLUMN))
             );
 
             $builder->where($where);
