@@ -36,10 +36,10 @@ class StockManagement
     private $defaultCondition = Constants::CONDITION_NEW;
 
     /**
-     * @param Client $apiClient
+     * @param Client     $apiClient
      * @param Connection $connection
-     * @param string $defaultDelivery
-     * @param string $defaultCondition
+     * @param string     $defaultDelivery
+     * @param string     $defaultCondition
      */
     public function __construct(Client $apiClient, Connection $connection, $defaultDelivery, $defaultCondition)
     {
@@ -69,22 +69,22 @@ class StockManagement
      */
     public function flushInventory($shopId)
     {
-        $shopUrl = HmShop::getShopUrl($shopId,true);
+        $shopUrl = HmShop::getShopUrl($shopId, true);
         $callback = $shopUrl . "?sViewport=Hm&sAction=flushCommand";
         $this->apiClient->importFiles()->post($callback);
     }
 
     /**
      * @param Detail $detail
-     * @param bool $forceNotFound
-     * @param Stock $stock
+     * @param bool   $forceNotFound
+     * @param Stock  $stock
      * @param SwShop $shop
+     *
      * @return bool
      * @throws \Exception
      */
     public function syncByArticleDetails(Detail $detail, $forceNotFound = false, Stock $stock, SwShop $shop)
     {
-
         // For some reason there may be no stock object
         if ($stock == null) {
             $stock = new Stock();
@@ -117,6 +117,7 @@ class StockManagement
             if ($hmUnitId) {
                 $this->deleteUnit($stock);
             }
+
             return false;
         }
 
@@ -137,7 +138,7 @@ class StockManagement
         }
 
         // Look for price
-        $price = $this->getPrice($detail,$shop);
+        $price = $this->getPrice($detail, $shop);
 
         // Items in stock
         $inStock = $detail->getInStock();
@@ -167,8 +168,9 @@ class StockManagement
 
     /**
      * @param Detail $detail
-     * @param int $price
-     * @param Stock $stock
+     * @param int    $price
+     * @param Stock  $stock
+     *
      * @return bool
      * @throws \Exception
      */
@@ -190,6 +192,7 @@ class StockManagement
         } // Not possible to sell this item (EAN not found)
         catch (ResourceNotFoundException $e) {
             $this->updateStatus($stock, self::STATUS_NOT_FOUND);
+
             return false;
         }
 
@@ -207,8 +210,9 @@ class StockManagement
     /**
      * @param string $hmUnitId
      * @param Detail $detail
-     * @param int $price
-     * @param Stock $stock
+     * @param int    $price
+     * @param Stock  $stock
+     *
      * @return bool
      */
     private function updateUnit($hmUnitId, Detail $detail, $price, Stock $stock)
@@ -245,7 +249,9 @@ class StockManagement
 
     /**
      * Delete All Units by detailId
+     *
      * @param $detailId
+     *
      * @return bool
      */
     private function deleteAllUnits($detailId)
@@ -270,9 +276,9 @@ class StockManagement
                 $builder = $stockRepository->createQueryBuilder('Stock')
                     ->where('Stock.unitId = :unitId');
 
-                $builder->setParameters(array(
-                    'unitId'  => $item['unit_id']
-                ));
+                $builder->setParameters([
+                    'unitId' => $item['unit_id']
+                ]);
 
                 $stock = $builder->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_OBJECT);
 
@@ -281,7 +287,7 @@ class StockManagement
                     $this->deleteUnit($stock);
 
                 } catch (Exception $e) {
-                    $logger->error('Error on stock deleteAllUntits', array('number' => $detailId, 'exception' => $e));
+                    $logger->error('Error on stock deleteAllUntits', ['number' => $detailId, 'exception' => $e]);
                 }
 
             }
@@ -293,9 +299,10 @@ class StockManagement
 
     /**
      * @param Detail $detail
-     * @param Stock $stock
+     * @param Stock  $stock
      * @param SwShop $shop
      * @param string $shippinggroup
+     *
      * @return bool
      * @throws \Exception
      */
@@ -308,7 +315,7 @@ class StockManagement
             $stock->setShopId($shop);
             $stock->setShippinggroup($shippinggroup);
             Shopware()->Models()->persist($stock);
-        }else{
+        } else {
             $stock->setShippinggroup($shippinggroup);
 
         }
@@ -327,7 +334,7 @@ class StockManagement
     }
 
     /**
-     * @param Stock $stock
+     * @param Stock  $stock
      * @param string $status
      */
     private function updateStatus(Stock $stock, $status)
@@ -338,6 +345,7 @@ class StockManagement
 
     /**
      * @param mixed $days
+     *
      * @return string
      */
     private function getDeliveryTimeByDays($days)
@@ -371,6 +379,7 @@ class StockManagement
 
     /**
      * @param Detail $detail
+     *
      * @return int
      * @throws \Exception
      */
@@ -378,7 +387,7 @@ class StockManagement
     {
         $pricegroup = $shop->getCustomerGroup()->getKey();
         $q = sprintf('SELECT `price` FROM `s_articles_prices` WHERE `articledetailsID` = %d AND `from` = 1 AND `pricegroup` = ? ORDER BY `price` ASC LIMIT 1', $detail->getId());
-        $stmt = $this->connection->executeQuery($q, array($pricegroup));
+        $stmt = $this->connection->executeQuery($q, [$pricegroup]);
 
         if (!($price = $stmt->fetchColumn(0))) {
             throw new \Exception('There is no price for article details.');
@@ -394,7 +403,7 @@ class StockManagement
     private function getShippingGroup(Stock $stock)
     {
         $shippingGroup = $stock->getShippinggroup();
-        if(empty($shippingGroup)){
+        if (empty($shippingGroup)) {
             $shopConfig = HmShop::getShopConfigByShopId($stock->getShopId());
             $shippingGroup = $shopConfig->get('defaultShippingGroup');
         }

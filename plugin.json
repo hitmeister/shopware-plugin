@@ -4,7 +4,7 @@
     "en": "real.de - Online shopping portal"
   },
   "menu_label": "real.de",
-  "currentVersion": "2.1.1",
+  "currentVersion": "2.1.2",
   "author": "real,- SB-Warenhaus GmbH",
   "copyright": "Copyright © 2015, real,- SB-Warenhaus GmbH",
   "license": "proprietary",
@@ -12,6 +12,7 @@
   "link": "https://www.real.de",
   "changelog": {
     "de": {
+      "2.1.2": "Fix problems by updating article stock and synchronisation with empty article attributes",
       "2.1.1": "Add custom attributes",
       "2.1.0": "Update for SW 5.2.x",
       "2.0.1": "Add Carrier- and Trackingcode-Functionality",
@@ -29,6 +30,7 @@
       "1.0.0": "First release"
     },
     "en": {
+      "2.1.2": "Fix problems by updating article stock and synchronisation with empty article attributes",
       "2.1.1": "Add custom attributes",
       "2.1.0": "Update for SW 5.2.x",
       "2.0.1": "Add Carrier- and Trackingcode-Functionality",

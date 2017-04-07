@@ -75,7 +75,7 @@ class Form
         // Stock management
         $this->form->setElement('select', 'syncStatus', array(
           'label' => 'Stock: Sync status',
-          'description' => 'Bitte legen Sie den globalen Sync Status für den Subshop fest. ACHTUNG: Wenn sie Artikel eines Shops bei real.de blocken oder löschen wollen, dann müssen Sie den entsprechenden Aufruf vorher im real Modul starten.',
+          'description' => 'Bitte legen Sie den globalen Sync Status für den Subshop fest. ACHTUNG: Wenn sie Artikel eines Shops bei real.de blocken oder löschen wollen, dann müssen Sie den entsprechenden Aufruf vorher im real.de Modul starten.',
           'value' => 0,
           'required' => true,
           'store' => array(
