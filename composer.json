@@ -3,7 +3,7 @@
     "description": "Das Hitmeister Plug-in bietet Ihnen die Möglichkeit der einfachen Anbindung eines weiteren Vertriebskanals, der Ihnen zu mehr Umsatz und zu neuen Kundengruppen verhelfen wird.",
     "homepage": "http://store.shopware.com/hitme73588763536/hitmeister.de-online-shoppingportal.html",
     "require": {
-        "hitmeister/api-sdk": "~1.7.0"
+        "hitmeister/api-sdk": "~1.7"
     },
     "license": "proprietary",
     "authors": [
