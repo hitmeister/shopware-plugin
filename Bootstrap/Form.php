@@ -9,6 +9,10 @@ use Shopware\Models\Config\Form as ConfigForm;
 use Shopware\Models\Config\FormTranslation;
 use Shopware\Models\Shop\Locale;
 
+/**
+ * Class Form
+ * @package ShopwarePlugins\HitmeMarketplace\Bootstrap
+ */
 class Form
 {
     /**

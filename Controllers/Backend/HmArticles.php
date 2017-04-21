@@ -1,36 +1,49 @@
 <?php
 
+use Shopware\Components\Model\ModelManager;
+use Shopware\Components\Model\ModelRepository;
 use ShopwarePlugins\HitmeMarketplace\Components\StockManagement;
 use ShopwarePlugins\HitmeMarketplace\Components\Shop;
 use Shopware\Components\CSRFWhitelistAware;
-require_once __DIR__ . '/../../Components/CSRFWhitelistAware.php';
 
+/**
+ * Class Shopware_Controllers_Backend_HmArticles
+ */
 class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backend_ExtJs implements CSRFWhitelistAware
 {
+    const ERROR_MSG = 'errors';
+    const DETAIL = 'detail';
+    const STOCK = 'stock';
+    const SHOP = 'shop';
+    const DB = 'dbal_connection';
+    
+    /**
+     * get list of articles
+     */
     public function getListAction()
     {
         $limit = $this->Request()->getParam('limit', 100);
         $offset = ($this->Request()->getParam('page', 1) - 1) * $limit;
-        $sort = $this->Request()->getParam('sort', array());
-        $filter = $this->Request()->getParam('filter', array());
-
+        $sort = $this->Request()->getParam('sort', []);
+        $filter = $this->Request()->getParam('filter', []);
+        
         try {
             /** @var \Doctrine\DBAL\Query\QueryBuilder $builder */
-            $joinBuilder = Shopware()->Container()->get('dbal_connection')->createQueryBuilder();
+            $joinBuilder = Shopware()->Container()->get(self::DB)->createQueryBuilder();
             $joinBuilder
-                ->select(array(
+                ->select([
                     'cor.article_id',
                     'GROUP_CONCAT(CONCAT(cg.name, " ", co.name) ORDER BY cg.position SEPARATOR ", ") AS variant_text',
-                ))
+                ])
                 ->from('s_article_configurator_option_relations', 'cor')
                 ->innerJoin('cor', 's_article_configurator_options', 'co', 'co.id = cor.option_id')
                 ->innerJoin('co', 's_article_configurator_groups', 'cg', 'cg.id = co.group_id')
                 ->groupBy('cor.article_id');
-
+            
             /** @var \Doctrine\DBAL\Query\QueryBuilder $builder */
-            $builder = Shopware()->Container()->get('dbal_connection')->createQueryBuilder();
+            $builder = Shopware()->Container()->get(self::DB)->createQueryBuilder();
             $builder
-                ->select(array(
+                ->select([
                     'd.id',
                     'd.ordernumber',
                     'CONCAT_WS(", ", a.name, v.variant_text) AS name',
@@ -39,332 +52,173 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
                     'da.unit_id AS hm_unit_id',
                     'da.last_access_date AS hm_last_access_date',
                     'da.status AS hm_status'
-                ))
+                ])
                 ->from('s_articles_details', 'd')
                 ->innerJoin('d', 's_articles', 'a', 'a.id = d.articleID')
                 ->leftJoin('d', '(' . $joinBuilder->getSQL() . ')', 'v', 'v.article_id = d.id');
-
+            
             $where = $builder
                 ->expr()
                 ->andX('d.active = 1');
-
+            
             if (!empty($filter)) {
                 $or = $builder->expr()->orX();
-
+                
                 foreach ($filter as $item) {
-                    if($item['property']=='categoryId'){
+                    if ($item['property'] == 'categoryId') {
                         $categoryId = (int)$item['value'];
-                    }elseif($item['property']=='shopId') {
+                    } elseif ($item['property'] == 'shopId') {
                         if (!empty($item['value'])) {
                             $shopId = (int)$item['value'];
                             $shop = Shopware()->Models()->find("Shopware\\Models\\Shop\\Shop", $shopId);
-                            if(!$categoryId){
+                            if (!$categoryId) {
                                 $categoryId = (int)$shop->getCategory()->getId();
                             }
                         }
-                    }else{
+                    } else {
                         $prefix = ($item['property'] == 'name') ? 'a' : 'd';
                         $or->add($prefix . '.' . $item['property'] . ' LIKE :' . $item['property']);
                         $builder->setParameter(':' . $item['property'], '%' . $item['value'] . '%');
                     }
                 }
-
-                if($or->count()){
+                
+                if ($or->count()) {
                     $where->add($or);
                 }
             }
-
-            if(!empty($shopId)){
+            
+            if (!empty($shopId)) {
                 $shopConfig = Shop::getShopConfigByShopId($shopId);
                 $shippingGroup = $shopConfig->get('defaultShippingGroup');
                 $builder
-                  ->addSelect('CASE WHEN da.shippinggroup IS NOT NULL
+                    ->addSelect('CASE WHEN da.shippinggroup IS NOT NULL
                     THEN da.shippinggroup
                     ELSE :default_shippinggroup
-                    END AS hm_shippinggroup'
-                  )
-                  ->leftJoin('d', 's_plugin_hitme_stock', 'da', 'da.article_detail_id = d.id AND da.shop_id = :join_shop_id');
+                    END AS hm_shippinggroup')
+                    ->leftJoin(
+                        'd',
+                        's_plugin_hitme_stock',
+                        'da',
+                        'da.article_detail_id = d.id AND da.shop_id = :join_shop_id'
+                    );
                 $builder->setParameter(':default_shippinggroup', $shippingGroup);
                 $builder->setParameter(':join_shop_id', $shopId);
-            }else{
+            } else {
                 $builder
-                  ->addSelect('da.shippinggroup AS hm_shippinggroup')
-                  ->leftJoin('d', 's_plugin_hitme_stock', 'da', 'da.article_detail_id = d.id');
+                    ->addSelect('da.shippinggroup AS hm_shippinggroup')
+                    ->leftJoin('d', 's_plugin_hitme_stock', 'da', 'da.article_detail_id = d.id');
             }
-
-
-            $filterShopBuilder = Shopware()->Container()->get('dbal_connection')->createQueryBuilder();
+            
+            $filterShopBuilder = Shopware()->Container()->get(self::DB)->createQueryBuilder();
             $filterShopBuilder
-              ->select(array(
-                'cat.articleID',
-              ))
-              ->from('s_articles_categories_ro', 'cat')
-              ->groupBy('cat.articleID');
-
-            if(!empty($categoryId)){
+                ->select(['cat.articleID'])
+                ->from('s_articles_categories_ro', 'cat')
+                ->groupBy('cat.articleID');
+            
+            if (!empty($categoryId)) {
                 $filterShopBuilder->where('cat.categoryID = :filter_shop');
                 $builder->setParameter(':filter_shop', $categoryId);
-            }else{
+            } else {
                 $hmActiveShops = Shop::getActiveShops();
-                $hmActiveShopsCatIds = array_map(function ($item) {return $item['category_id'];}, $hmActiveShops);
-                if(count($hmActiveShopsCatIds)){
+                $hmActiveShopsCatIds = array_map(function ($item) {
+                    return $item['category_id'];
+                }, $hmActiveShops);
+                if (count($hmActiveShopsCatIds)) {
                     $filterShopBuilder->where(
-                      $filterShopBuilder->expr()->in('cat.categoryID',implode(",", $hmActiveShopsCatIds))
+                        $filterShopBuilder->expr()->in('cat.categoryID', implode(",", $hmActiveShopsCatIds))
                     );
-                }else{
+                } else {
                     throw new Exception("No Articles to sync");
                 }
             }
-
+            
             $where->add(
-              $builder->expr()->in('d.articleID', $filterShopBuilder->getSQL())
+                $builder->expr()->in('d.articleID', $filterShopBuilder->getSQL())
             );
-
+            
             $builder->where($where);
-
+            
             $totalBuilder = clone $builder;
-
+            
             $builder
                 ->setFirstResult($offset)
                 ->setMaxResults($limit);
-
+            
             if (!empty($sort)) {
                 $sort = array_pop($sort);
                 $builder->orderBy($sort['property'], $sort['direction']);
             } else {
                 $builder->orderBy('ordernumber', 'ASC');
             }
-
+            
             $totalBuilder
                 ->select('COUNT(d.id)')
 //                ->from('s_articles_details', 'd')
                 ->where($where);
-
+            
             $data = $builder->execute()->fetchAll(PDO::FETCH_ASSOC);
             $total = $totalBuilder->execute()->fetchColumn(0);
-
-            $this->View()->assign(array(
-                'success' => true,
-                'data' => $data,
-                'total' => $total,
-            ));
+            
+            $this->View()->assign(['success' => true, 'data' => $data, 'total' => $total]);
         } catch (Exception $e) {
-            $this->View()->assign(array('success' => false, 'data' => array(), 'total' => 0, 'message' => $e->getMessage()));
+            $this->View()->assign(['success' => false, 'data' => [], 'total' => 0, 'message' => $e->getMessage()]);
         }
     }
-
+    
+    /**
+     * @return Enlight_View|Enlight_View_Default
+     */
     public function changeStatusByIdAction()
     {
         $detailsId = $this->Request()->getParam('id', null);
         if (empty($detailsId)) {
-            return $this->View()->assign(array('success' => false, 'message' => 'No article details id passed!'));
+            return $this->View()->assign(['success' => false, 'message' => 'No article details id passed!']);
         }
-
+        
         $status = $this->Request()->getParam('status');
-        if (!in_array($status, array(StockManagement::STATUS_NEW, StockManagement::STATUS_BLOCKED))) {
-            return $this->View()->assign(array('success' => false, 'message' => 'Unexpected status value. Expecting new or blocked.'));
+        if (!in_array($status, [StockManagement::STATUS_NEW, StockManagement::STATUS_BLOCKED], true)) {
+            return $this->View()->assign(['success' => false, 'message' => 'Unexpected status value. Expecting new or blocked.']);
         }
-
+        
         $shopId = $this->Request()->getParam('shopId');
         if (empty($shopId)) {
-            return $this->View()->assign(array('success' => false, 'message' => 'No shop id is passed!'));
+            return $this->View()->assign(['success' => false, 'message' => 'No shop id is passed!']);
         }
-
+        
         try {
             // Cleanup first
-            if (StockManagement::STATUS_BLOCKED == $status) {
+            if (StockManagement::STATUS_BLOCKED === $status) {
                 $this->getStockManagement()->blockByDetailId($detailsId, $shopId);
             }
-
+            
             /** @var \Doctrine\DBAL\Connection $connection */
-            $connection = Shopware()->Container()->get('dbal_connection');
-
+            $connection = Shopware()->Container()->get(self::DB);
+            
             // Then remove data
-            $connection->update('s_plugin_hitme_stock',
-                array(
+            $connection->update(
+                's_plugin_hitme_stock',
+                [
                     'status' => $status,
                     'last_access_date' => null,
-                    'unit_id' => null,
-                ),
-                array(
+                    'unit_id' => null
+                ],
+                [
                     'article_detail_id' => (int)$detailsId,
-                    'shop_id'           => (int)$shopId,
-                ),
-                array(
+                    'shop_id' => (int)$shopId
+                ],
+                [
                     'status' => PDO::PARAM_STR,
                     'last_access_date' => PDO::PARAM_NULL,
-                    'unit_id' => PDO::PARAM_NULL,
-                )
+                    'unit_id' => PDO::PARAM_NULL
+                ]
             );
-
-            $this->View()->assign(array('success' => true));
+            
+            $this->View()->assign(['success' => true]);
         } catch (Exception $e) {
-            $this->View()->assign(array('success' => false, 'message' => $e->getMessage()));
+            $this->View()->assign(['success' => false, 'message' => $e->getMessage()]);
         }
     }
-
-    public function changeShippinggroupByIdAction()
-    {
-        $detailsId = $this->Request()->getParam('id', null);
-        if (empty($detailsId)) {
-            return $this->View()->assign(array('success' => false, 'message' => 'No article details id passed!'));
-        }
-
-        /** @var Shopware\Models\Article\Detail $detail */
-        $detail = Shopware()->Models()->find('Shopware\Models\Article\Detail', $detailsId);
-        if (empty($detail)) {
-            return $this->View()->assign(array('success' => false, 'message' => sprintf('Article details %d not found!', $detailsId)));
-        }
-
-        $shopId = $this->Request()->getParam('shopId');
-        if (empty($shopId)) {
-            return $this->View()->assign(array('success' => false, 'message' => 'No shop id is passed!'));
-        }
-
-        /** @var Shopware\Models\Shop\Shop $shop */
-        $shop = Shopware()->Models()->find('Shopware\Models\Shop\Shop', $shopId);
-        if (empty($shop)) {
-            return $this->View()->assign(array('success' => false, 'message' => sprintf('Shop %d not found!', $shopId)));
-        }
-
-        /** @var Shopware\CustomModels\HitmeMarketplace\Stock $stock */
-        $stockRepository = Shopware()->Models()->getRepository('Shopware\CustomModels\HitmeMarketplace\Stock');
-        $builder = $stockRepository->createQueryBuilder('Stock')
-          ->where('Stock.shopId = :shopId')
-          ->andWhere('Stock.articleDetailId = :articleDetailId');
-
-        $builder->setParameters(array(
-          'shopId'  => $shopId,
-          'articleDetailId' => $detail->getId()
-        ));
-
-        $stock = $builder->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_OBJECT);
-
-        $shippinggroup = $this->Request()->getParam('shippinggroup');
-
-        try {
-            $this->getStockManagement()->updateShippinggroup($detail, $stock, $shop, $shippinggroup);
-            $this->View()->assign(array('success' => true));
-        } catch (Exception $e) {
-            $this->View()->assign(array('success' => false, 'message' => $e->getMessage()));
-        }
-    }
-
-    public function syncStockByIdAction()
-    {
-        $detailsId = $this->Request()->getParam('id', null);
-        if (empty($detailsId)) {
-            return $this->View()->assign(array('success' => false, 'message' => 'No article details id passed!'));
-        }
-
-        /** @var Shopware\Models\Article\Detail $detail */
-        $detail = Shopware()->Models()->find('Shopware\Models\Article\Detail', $detailsId);
-        if (empty($detail)) {
-            return $this->View()->assign(array('success' => false, 'message' => sprintf('Article details %d not found!', $detailsId)));
-        }
-
-        $shopId = $this->Request()->getParam('shopId');
-        if (empty($shopId)) {
-            return $this->View()->assign(array('success' => false, 'message' => 'No shop id passed!'));
-        }
-
-        /** @var Shopware\Models\Shop\Shop $shop */
-        $shop = Shopware()->Models()->find('Shopware\Models\Shop\Shop', $shopId);
-        if (empty($shop)) {
-            return $this->View()->assign(array('success' => false, 'message' => sprintf('Shop %d not found!', $shopId)));
-        }
-
-        /** @var Shopware\CustomModels\HitmeMarketplace\Stock $stock */
-        $stockRepository = Shopware()->Models()->getRepository('Shopware\CustomModels\HitmeMarketplace\Stock');
-        $builder = $stockRepository->createQueryBuilder('Stock')
-          ->where('Stock.shopId = :shopId')
-          ->andWhere('Stock.articleDetailId = :articleDetailId');
-
-        $builder->setParameters(array(
-          'shopId'  => $shopId,
-          'articleDetailId' => $detail->getId()
-        ));
-
-        $stock = $builder->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_OBJECT);
-
-        try {
-            $this->getStockManagement()->syncByArticleDetails($detail, true, $stock, $shop);
-
-            $this->View()->assign(array('success' => true));
-        } catch (Exception $e) {
-            $this->View()->assign(array('success' => false, 'message' => $e->getMessage()));
-        }
-    }
-
-    public function readyForSyncAction()
-    {
-        $shopId = $this->Request()->getParam('shopId');
-        if (empty($shopId)) {
-            return $this->View()->assign(array('success' => false, 'message' => 'No shop id passed!'));
-        }
-
-        /** @var Shopware\Models\Shop\Shop $shop */
-        $shop = Shopware()->Models()->find('Shopware\Models\Shop\Shop', $shopId);
-        if (empty($shop)) {
-            return $this->View()->assign(array('success' => false, 'message' => sprintf('Shop %d not found!', $shopId)));
-        }
-
-        $sql = "SELECT d.`id` FROM `s_articles_details` d LEFT JOIN `s_plugin_hitme_stock` a ON d.id = a.article_detail_id WHERE d.`ean` IS NOT NULL AND d.`ean` != '' AND (a.`status` NOT IN (?) OR a.`status` IS NULL ) AND d.articleID IN(SELECT cat.articleID FROM s_articles_categories_ro cat WHERE cat.categoryID = ? GROUP BY cat.articleID)";
-
-        try {
-            /** @var \Doctrine\DBAL\Connection $connection */
-            $connection = Shopware()->Container()->get('dbal_connection');
-            $stmt = $connection->executeQuery($sql, array(StockManagement::STATUS_BLOCKED, $shop->getCategory()->getId()));
-            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            $this->View()->assign(array('success' => true, 'data' => $data));
-        } catch (Exception $e) {
-            $this->View()->assign(array('success' => false, 'data' => array(), 'message' => $e->getMessage()));
-        }
-    }
-
-    public function changeStatusAllAction()
-    {
-        $shopId = $this->Request()->getParam('shopId');
-        if (empty($shopId)) {
-            return $this->View()->assign(array('success' => false, 'message' => 'No shop id is passed!'));
-        }
-
-        $status = $this->Request()->getParam('status');
-        if (!in_array($status, array(StockManagement::STATUS_NEW, StockManagement::STATUS_BLOCKED))) {
-            return $this->View()->assign(array('success' => false, 'message' => 'Unexpected status value. Expecting new or blocked.'));
-        }
-
-        try {
-            // Cleanup first
-            $this->getStockManagement()->flushInventory($shopId);
-
-            /** @var \Doctrine\DBAL\Connection $connection */
-            $connection = Shopware()->Container()->get('dbal_connection');
-
-            // Then update data
-            $connection->update('s_plugin_hitme_stock',
-              array(
-                'status' => $status,
-                'last_access_date' => null,
-                'unit_id' => null
-              ),
-              array(
-                'shop_id'           => (int)$shopId,
-              ),
-              array(
-                'status' => PDO::PARAM_STR,
-                'last_access_date' => PDO::PARAM_NULL,
-                'unit_id' => PDO::PARAM_NULL
-              )
-            );
-
-            $this->View()->assign(array('success' => true));
-        } catch (Exception $e) {
-            $this->View()->assign(array('success' => false, 'message' => $e->getMessage()));
-        }
-    }
-
+    
     /**
      * @return StockManagement
      */
@@ -372,19 +226,219 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
     {
         return $this->get('HmStockManagement');
     }
-
+    
+    /**
+     * @return Enlight_View|Enlight_View_Default
+     * @throws \Doctrine\ORM\TransactionRequiredException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Doctrine\ORM\ORMInvalidArgumentException
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function changeShippinggroupByIdAction()
+    {
+        $params = $this->Request()->getParams();
+        $detailsId = (int)$params['id'];
+        $shopId = $params['shopId'];
+        $shippingGroup = $params['shippinggroup'];
+        
+        $prepareChange = $this->prepareChangeSync($detailsId, $shopId);
+        
+        if (empty($prepareChange[self::ERROR_MSG])) {
+            try {
+                $detail = $prepareChange[self::DETAIL];
+                $stock = $prepareChange[self::STOCK];
+                $shop = $prepareChange[self::SHOP];
+                
+                $this->getStockManagement()->updateShippingGroup($detail, $shop, $shippingGroup, $stock);
+                
+                return $this->View()->assign(['success' => true]);
+            } catch (Exception $e) {
+                return $this->View()->assign(['success' => false, 'message' => $e->getMessage()]);
+            }
+        } else {
+            return $this->View()->assign(['success' => false, 'message' => $prepareChange[self::ERROR_MSG][0]]);
+        }
+    }
+    
+    /**
+     * prepare data for changeShippinggroupByIdAction and syncStockByIdAction
+     *
+     * @param int $detailId
+     * @param int $shopId
+     * @return array
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     * @throws \Doctrine\ORM\TransactionRequiredException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Doctrine\ORM\ORMInvalidArgumentException
+     * @throws \Doctrine\ORM\ORMException
+     */
+    private function prepareChangeSync($detailId, $shopId)
+    {
+        $errorMessages = [];
+        /** @var Shopware\Models\Article\Detail $detail */
+        $detail = null;
+        /** @var Shopware\Models\Shop\Shop $shop */
+        $shop = null;
+        /** @var Shopware\CustomModels\HitmeMarketplace\Stock $stock */
+        $stock = null;
+        
+        if ($detailId !== null) {
+            try {
+                $detail = Shopware()->Models()->find('Shopware\Models\Article\Detail', $detailId);
+            } catch (Exception $e) {
+                $errorMessages[] = $e->getMessage();
+            }
+        } else {
+            $errorMessages[] = 'No article details id passed!';
+        }
+        
+        if ($shopId !== null) {
+            $shop = Shopware()->Models()->find('Shopware\Models\Shop\Shop', $shopId);
+            if (null === $shop) {
+                $errorMessages[] = sprintf('Shop %d not found!', $shopId);
+            }
+        } else {
+            $errorMessages[] = 'No shop id is passed!';
+        }
+        
+        if (empty($errorMessages)) {
+            $stockRepository = Shopware()->Models()->getRepository('Shopware\CustomModels\HitmeMarketplace\Stock');
+            $builder = $stockRepository->createQueryBuilder('Stock')
+                ->where('Stock.shopId = :shopId')
+                ->andWhere('Stock.articleDetailId = :articleDetailId');
+            
+            $builder->setParameters([
+                'shopId' => $shopId,
+                'articleDetailId' => $detail->getId()
+            ]);
+            
+            $stock = $builder->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_OBJECT);
+        }
+        
+        return [
+            self::ERROR_MSG => $errorMessages,
+            self::DETAIL => $detail,
+            self::SHOP => $shop,
+            self::STOCK => $stock
+        ];
+    }
+    
+    /**
+     * sync stock by id
+     *
+     * @return Enlight_View|Enlight_View_Default
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     * @throws \Doctrine\ORM\TransactionRequiredException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Doctrine\ORM\ORMInvalidArgumentException
+     * @throws \Doctrine\ORM\ORMException
+     */
+    public function syncStockByIdAction()
+    {
+        $detailsId = $this->Request()->getParam('id', null);
+        $shopId = $this->Request()->getParam('shopId');
+        
+        $prepareSync = $this->prepareChangeSync($detailsId, $shopId);
+        
+        if (empty($prepareSync[self::ERROR_MSG])) {
+            try {
+                $detail = $prepareSync[self::DETAIL];
+                $stock = $prepareSync[self::STOCK];
+                $shop = $prepareSync[self::SHOP];
+                
+                $this->getStockManagement()->syncByArticleDetails($detail, $shop, $stock, true);
+                
+                return $this->View()->assign(['success' => true]);
+            } catch (Exception $e) {
+                return $this->View()->assign(['success' => false, 'message' => $e->getMessage()]);
+            }
+        } else {
+            return $this->View()->assign(['success' => false, 'message' => $prepareSync[self::ERROR_MSG][0]]);
+        }
+    }
+    
+    public function readyForSyncAction()
+    {
+        $shopId = $this->Request()->getParam('shopId');
+        if (empty($shopId)) {
+            return $this->View()->assign(['success' => false, 'message' => 'No shop id passed!']);
+        }
+        
+        /** @var Shopware\Models\Shop\Shop $shop */
+        $shop = Shopware()->Models()->find('Shopware\Models\Shop\Shop', $shopId);
+        if (null === $shop) {
+            return $this->View()->assign(['success' => false, 'message' => sprintf('Shop %d not found!', $shopId)]);
+        }
+        
+        $sql = "SELECT d.`id` FROM `s_articles_details` d LEFT JOIN `s_plugin_hitme_stock` a ON d.id = a.article_detail_id WHERE d.`ean` IS NOT NULL AND d.`ean` != '' AND (a.`status` NOT IN (?) OR a.`status` IS NULL ) AND d.articleID IN(SELECT cat.articleID FROM s_articles_categories_ro cat WHERE cat.categoryID = ? GROUP BY cat.articleID)";
+        
+        try {
+            /** @var \Doctrine\DBAL\Connection $connection */
+            $connection = Shopware()->Container()->get(self::DB);
+            $stmt = $connection->executeQuery($sql, [StockManagement::STATUS_BLOCKED, $shop->getCategory()->getId()]);
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $this->View()->assign(['success' => true, 'data' => $data]);
+        } catch (Exception $e) {
+            $this->View()->assign(['success' => false, 'data' => [], 'message' => $e->getMessage()]);
+        }
+    }
+    
+    public function changeStatusAllAction()
+    {
+        $shopId = $this->Request()->getParam('shopId');
+        if (empty($shopId)) {
+            return $this->View()->assign(['success' => false, 'message' => 'No shop id is passed!']);
+        }
+        
+        $status = $this->Request()->getParam('status');
+        if (!in_array($status, [StockManagement::STATUS_NEW, StockManagement::STATUS_BLOCKED])) {
+            return $this->View()->assign(['success' => false, 'message' => 'Unexpected status value. Expecting new or blocked.']);
+        }
+        
+        try {
+            // Cleanup first
+            $this->getStockManagement()->flushInventory($shopId);
+            
+            /** @var \Doctrine\DBAL\Connection $connection */
+            $connection = Shopware()->Container()->get(self::DB);
+            
+            // Then update data
+            $connection->update('s_plugin_hitme_stock',
+                [
+                    'status' => $status,
+                    'last_access_date' => null,
+                    'unit_id' => null
+                ],
+                [
+                    'shop_id' => (int)$shopId,
+                ],
+                [
+                    'status' => PDO::PARAM_STR,
+                    'last_access_date' => PDO::PARAM_NULL,
+                    'unit_id' => PDO::PARAM_NULL
+                ]
+            );
+            
+            $this->View()->assign(['success' => true]);
+        } catch (Exception $e) {
+            $this->View()->assign(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+    
     /**
      * Whitelist notify- and webhook-actions
      */
     public function getWhitelistedCSRFActions()
     {
-        return array(
+        return [
             'getList',
             'changeStatusById',
             'changeShippinggroupById',
             'syncStockById',
             'readyForSync',
             'changeStatusAll'
-        );
+        ];
     }
 }

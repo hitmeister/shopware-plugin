@@ -4,6 +4,10 @@ namespace ShopwarePlugins\HitmeMarketplace\Components;
 
 use Shopware\Models\Shop\Shop as SwShop;
 
+/**
+ * Class Shop
+ * @package ShopwarePlugins\HitmeMarketplace\Components
+ */
 class Shop
 {
     protected $shopConfig;
@@ -78,5 +82,4 @@ class Shop
         return $shopUrl;
 
     }
-
 }

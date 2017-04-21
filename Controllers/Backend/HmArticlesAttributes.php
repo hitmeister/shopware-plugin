@@ -1,10 +1,10 @@
 <?php
 
 use Shopware\Components\CSRFWhitelistAware;
-use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
 
-require_once __DIR__ . '/../../Components/CSRFWhitelistAware.php';
-
+/**
+ * Class Shopware_Controllers_Backend_HmArticlesAttributes
+ */
 class Shopware_Controllers_Backend_HmArticlesAttributes extends Shopware_Controllers_Backend_ExtJs
     implements CSRFWhitelistAware
 {
@@ -59,14 +59,12 @@ class Shopware_Controllers_Backend_HmArticlesAttributes extends Shopware_Control
         $dbCfg = $this->db->getConfig();
         $dbName = $dbCfg['dbname'];
 
-        $attributes = Shopware()->Db()->fetchCol(
-            'SELECT `COLUMN_NAME`
-            FROM `INFORMATION_SCHEMA`.`COLUMNS`
-            WHERE `TABLE_SCHEMA` = \'' . $dbName . '\'
-                  AND `TABLE_NAME` = \'s_articles_attributes\'
-            AND `COLUMN_NAME`NOT IN (
-            \'id\',\'articledetailsID\',\'articleID\')'
-        );
+        $sql = "SELECT COLUMN_NAME FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = ?
+                      AND TABLE_NAME = 's_articles_attributes'
+                      AND COLUMN_NAME NOT IN ('id', 'articledetailsID', 'articleID')";
+
+        $attributes = Shopware()->Db()->fetchCol($sql, $dbName);
 
         $data = [];
         foreach ($attributes as $attribute) {
@@ -88,11 +86,11 @@ class Shopware_Controllers_Backend_HmArticlesAttributes extends Shopware_Control
      */
     private function getAttributeLabel($attribute)
     {
-        $sql = 'SELECT
+        $sql = "SELECT
                   label
                 FROM s_attribute_configuration
-                WHERE table_name = \'s_articles_attributes\' 
-                AND column_name = ?';
+                WHERE table_name = 's_articles_attributes' 
+                AND column_name = ?";
 
         return Shopware()->Db()->fetchOne($sql, $attribute);
     }

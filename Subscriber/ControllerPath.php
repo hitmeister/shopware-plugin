@@ -5,6 +5,10 @@ namespace ShopwarePlugins\HitmeMarketplace\Subscriber;
 use Enlight\Event\SubscriberInterface;
 use Enlight_Event_EventArgs;
 
+/**
+ * Class ControllerPath
+ * @package ShopwarePlugins\HitmeMarketplace\Subscriber
+ */
 class ControllerPath implements SubscriberInterface
 {
     /**

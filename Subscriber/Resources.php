@@ -10,6 +10,10 @@ use ShopwarePlugins\HitmeMarketplace\Components\Ordering;
 use ShopwarePlugins\HitmeMarketplace\Components\StockManagement;
 use ShopwarePlugins\HitmeMarketplace\Components\Shop;
 
+/**
+ * Class Resources
+ * @package ShopwarePlugins\HitmeMarketplace\Subscriber
+ */
 class Resources implements SubscriberInterface
 {
     private $config;
@@ -112,7 +116,6 @@ class Resources implements SubscriberInterface
     public function onInitOrdering()
     {
         return new Ordering(
-            Shopware()->Container()->get('dbal_connection'),
             Shopware()->Container()->get('HmApi'),
             $this->config->get('defaultDeliveryMethod'),
             $this->config->get('defaultPaymentMethod'),

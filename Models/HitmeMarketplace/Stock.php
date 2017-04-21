@@ -139,14 +139,10 @@ class Stock extends ModelEntity
     }
 
     /**
-     * @param mixed $shippinggroup
+     * @param string $shippinggroup
      */
     public function setShippinggroup($shippinggroup)
     {
         $this->shippinggroup = $shippinggroup;
     }
-
-
-
-
 }
