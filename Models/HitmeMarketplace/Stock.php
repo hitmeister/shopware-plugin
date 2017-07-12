@@ -1,8 +1,9 @@
 <?php
 
 namespace Shopware\CustomModels\HitmeMarketplace;
-use Shopware\Components\Model\ModelEntity,
-    Doctrine\ORM\Mapping AS ORM;
+
+use Doctrine\ORM\Mapping as ORM;
+use Shopware\Components\Model\ModelEntity;
 
 /**
  * @ORM\Entity
