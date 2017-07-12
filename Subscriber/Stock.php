@@ -28,7 +28,7 @@ class Stock implements SubscriberInterface
             'Shopware\Models\Article\Detail::postPersist' => 'onDetailsStockUpdate'
         ];
     }
-    
+
     /**
      * @param array $data
      *
@@ -60,9 +60,9 @@ class Stock implements SubscriberInterface
         /** @var LoggerInterface $logger */
         $logger = Shopware()->Container()->get('pluginlogger');
         
-        /** @var StockManagement $manager */
-        $manager = Shopware()->Container()->get('HmStockManagement');
-        
+        /** @var StockManagement $stockManager */
+        $stockManager = Shopware()->Container()->get('HmStockManagement');
+
         /** @var Shop $shop */
         $shop = Shopware()->Models()->getRepository('Shopware\Models\Shop\Shop')->findOneBy(['default' => true]);
         
@@ -81,7 +81,7 @@ class Stock implements SubscriberInterface
         $stock = $builder->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_OBJECT);
         
         try {
-            $res = $manager->syncByArticleDetails($detail, $shop, $stock, true);
+            $res = $stockManager->syncByArticleDetails($detail, $shop, $stock, true);
             $logger->info('Stock auto update', ['number' => $detail->getNumber(), 'res' => (int)$res]);
         } catch (Exception $e) {
             $logger->error('Error on stock sync', ['number' => $detail->getNumber(), 'exception' => $e]);
@@ -97,7 +97,7 @@ class Stock implements SubscriberInterface
     {
         /** @var Detail $details */
         $details = $args->get('entity');
-    
+
         $this->updateStock($details);
     }
 }
