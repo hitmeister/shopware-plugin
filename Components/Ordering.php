@@ -26,8 +26,9 @@ use Shopware\Models\Order\DetailStatus;
 use Shopware\Models\Order\Order;
 use Shopware\Models\Order\Shipping as OrderShipping;
 use Shopware\Models\Payment\Payment;
-use Shopware\Models\Payment\PaymentInstance;
 use Shopware\Models\Shop\Shop;
+
+//use Shopware\Models\Payment\PaymentInstance;
 
 /**
  * Class Ordering
@@ -92,7 +93,7 @@ class Ordering
         
         /** @var Order $orderModel */
         $orderModel = Shopware()->Models()->find('Shopware\Models\Order\Order', $orderId);
-    
+        
         $customerModel = $this->getCustomer(
             $hmOrder->buyer->email,
             $hmOrder->billing_address,
@@ -177,8 +178,8 @@ class Ordering
         $shippingModel = $this->createShippingAddress($customerModel->getDefaultShippingAddress());
         $orderModel->setShipping($shippingModel);
         
-        $paymentInstance = $this->preparePaymentInstance($orderModel);
-        $orderModel->setPaymentInstances($paymentInstance);
+        //$paymentInstance = $this->preparePaymentInstance($orderModel);
+        //$orderModel->setPaymentInstances($paymentInstance);
         
         Shopware()->Models()->persist($orderModel);
         Shopware()->Models()->flush();
@@ -499,24 +500,24 @@ class Ordering
     
     /**
      * @param Order $orderModel
-     * @return PaymentInstance
-     */
-    private function preparePaymentInstance(Order $orderModel)
-    {
-        $paymentInstanceModel = new PaymentInstance();
-        $paymentInstanceModel->setPaymentMean($orderModel->getPayment());
-        $paymentInstanceModel->setOrder($orderModel);
-        $paymentInstanceModel->setCreatedAt($orderModel->getOrderTime());
-        $paymentInstanceModel->setCustomer($orderModel->getCustomer());
-        $paymentInstanceModel->setFirstName($orderModel->getBilling()->getFirstName());
-        $paymentInstanceModel->setLastName($orderModel->getBilling()->getLastName());
-        $paymentInstanceModel->setAddress($orderModel->getBilling()->getStreet());
-        $paymentInstanceModel->setZipCode($orderModel->getBilling()->getZipCode());
-        $paymentInstanceModel->setCity($orderModel->getBilling()->getCity());
-        $paymentInstanceModel->setAmount($orderModel->getInvoiceAmount());
-        
-        return $paymentInstanceModel;
-    }
+     * @return array
+     *
+     * /*private function preparePaymentInstance(Order $orderModel)
+     * {
+     * $paymentInstanceModel = new PaymentInstance();
+     * $paymentInstanceModel->setPaymentMean($orderModel->getPayment());
+     * $paymentInstanceModel->setOrder($orderModel);
+     * $paymentInstanceModel->setCreatedAt($orderModel->getOrderTime());
+     * $paymentInstanceModel->setCustomer($orderModel->getCustomer());
+     * $paymentInstanceModel->setFirstName($orderModel->getBilling()->getFirstName());
+     * $paymentInstanceModel->setLastName($orderModel->getBilling()->getLastName());
+     * $paymentInstanceModel->setAddress($orderModel->getBilling()->getStreet());
+     * $paymentInstanceModel->setZipCode($orderModel->getBilling()->getZipCode());
+     * $paymentInstanceModel->setCity($orderModel->getBilling()->getCity());
+     * $paymentInstanceModel->setAmount($orderModel->getInvoiceAmount());
+     *
+     * return (array)$paymentInstanceModel;
+     * }*/
     
     /**
      * @param $hmOrderUnitId
