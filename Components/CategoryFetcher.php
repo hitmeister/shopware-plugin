@@ -4,6 +4,10 @@ namespace ShopwarePlugins\HitmeMarketplace\Components;
 
 use Hitmeister\Component\Api\Client;
 
+/**
+ * Class CategoryFetcher
+ * @package ShopwarePlugins\HitmeMarketplace\Components
+ */
 class CategoryFetcher
 {
     /** @var Client */

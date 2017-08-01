@@ -48,8 +48,10 @@ Ext.define('Shopware.apps.Hm.controller.Shippinggroup', {
     },
 
     onBatchProcess: function (task, record, callback) {
+        window.console.log('id::'+record.get('id')+' shippinggroup::'+task.shippinggroup+' shopID::'+task.shopId );
         Ext.Ajax.request({
             url: '{url controller=HmArticles action=changeShippinggroupById}',
+            method: 'POST',
             params: {
                 id: record.get('id'),
                 shippinggroup: task.shippinggroup,

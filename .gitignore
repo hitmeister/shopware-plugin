@@ -1,9 +1,12 @@
 # IDE
 /.idea/
 
-# Compoer
+# Composer
 /vendor/
 /composer.lock
 
 # Build
 /build/HitmeMarketplace.zip
+
+# Library
+Lib

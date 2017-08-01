@@ -2,6 +2,10 @@
 
 namespace ShopwarePlugins\HitmeMarketplace\Bootstrap;
 
+/**
+ * Class Attributes
+ * @package ShopwarePlugins\HitmeMarketplace\Bootstrap
+ */
 class Attributes
 {
     public static function create()

@@ -4,13 +4,15 @@ namespace ShopwarePlugins\HitmeMarketplace\Subscriber;
 
 use Enlight\Event\SubscriberInterface;
 
+/**
+ * Class Backend
+ * @package ShopwarePlugins\HitmeMarketplace\Subscriber
+ */
 class Backend implements SubscriberInterface
 {
-    /**
-     * @var string
-     */
+    /** @var string $bootstrapPath */
     private $bootstrapPath;
-
+    
     /**
      * @param string $bootstrapPath
      */
@@ -18,18 +20,18 @@ class Backend implements SubscriberInterface
     {
         $this->bootstrapPath = $bootstrapPath;
     }
-
+    
     /**
      * {@inheritDoc}
      */
     public static function getSubscribedEvents()
     {
-        return array(
+        return [
             // Menu icon
-            'Enlight_Controller_Action_PostDispatchSecure_Backend_Index' => 'onPostDispatchIndex',
-        );
+            'Enlight_Controller_Action_PostDispatchSecure_Backend_Index' => 'onPostDispatchIndex'
+        ];
     }
-
+    
     /**
      * Provides the Hitmeister logo in the backend
      *
@@ -40,7 +42,7 @@ class Backend implements SubscriberInterface
         /* @var \Enlight_Controller_Action $subject */
         $subject = $args->get('subject');
         $view = $subject->View();
-
+        
         $view->addTemplateDir($this->bootstrapPath . 'Views/backend/');
         $view->extendsTemplate('hm/menu_entry.tpl');
     }

@@ -5,6 +5,11 @@ namespace ShopwarePlugins\HitmeMarketplace\Subscriber;
 use Enlight\Event\SubscriberInterface;
 use Enlight_Event_EventArgs;
 
+/**
+ * Class ControllerPath
+ *
+ * @package ShopwarePlugins\HitmeMarketplace\Subscriber
+ */
 class ControllerPath implements SubscriberInterface
 {
     /**
@@ -41,7 +46,8 @@ class ControllerPath implements SubscriberInterface
                 'Enlight_Controller_Dispatcher_ControllerPath_Backend_HmNotifications',
                 'Enlight_Controller_Dispatcher_ControllerPath_Backend_HmArticlesAttributes'
             ],
-            'onGetControllerPath');
+            'onGetControllerPath'
+        );
     }
 
     /**

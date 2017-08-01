@@ -5,6 +5,10 @@ namespace ShopwarePlugins\HitmeMarketplace\Bootstrap;
 use GuzzleHttp\Ring\Client\CurlMultiHandler;
 use GuzzleHttp\Ring\Future\FutureArrayInterface;
 
+/**
+ * Class Callback
+ * @package ShopwarePlugins\HitmeMarketplace\Bootstrap
+ */
 class Callback
 {
     /**

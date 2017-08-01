@@ -2,8 +2,10 @@
 
 use ShopwarePlugins\HitmeMarketplace\Components\CategoryFetcher;
 use Shopware\Components\CSRFWhitelistAware;
-require_once __DIR__ . '/../../Components/CSRFWhitelistAware.php';
 
+/**
+ * Class Shopware_Controllers_Backend_HmCategories
+ */
 class Shopware_Controllers_Backend_HmCategories extends Shopware_Controllers_Backend_ExtJs implements CSRFWhitelistAware
 {
     /**
