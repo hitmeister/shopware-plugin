@@ -4,7 +4,9 @@ namespace ShopwarePlugins\HitmeMarketplace\Components;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DBALException;
+use Exception;
 use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
+use sSystem;
 
 /**
  * Class Exporter
@@ -76,11 +78,12 @@ class Exporter
      * @param resource $handler
      *
      * @throws DBALException
+     * @throws Exception
      */
     private function buildFeed($handler)
     {
-        /** @var \sSystem $system */
-        $system = Shopware()->Bootstrap()->getResource('System');
+        /** @var sSystem $system */
+        $system = Shopware()->Container()->get('System');
         $imageDir = $system->sPathArticleImg;
         $shop = Shopware()->Shop();
         $shopId = $shop->getId();
@@ -243,9 +246,9 @@ SQL;
      */
     private function insertPicturesHeader($pos, array $header)
     {
-        $maxImgQt = $this->getMaxImgQt()[0];
+        $maxImgQt = $this->getMaxImgQt();
         
-        for ($i = $maxImgQt; $i >= 0; $i--) {
+        for ($i = $maxImgQt['qt'] - 1; $i >= 0; $i--) {
             array_splice($header, $pos, 0, 'picture_' . $i);
         }
         
@@ -261,19 +264,20 @@ SQL;
     {
         $sql = <<<SQL
 SELECT
-  count(sai.articleID) AS qt,
-  sad.ean
+  sad.articleID AS id,
+  count(sai.articleID) AS qt
 FROM s_articles_img sai
   INNER JOIN s_articles_details sad ON sai.articleID = sad.articleID
 WHERE NOT (sai.articleID <=> NULL)
       AND sad.ean != ''
+      AND sad.active = 1
 GROUP BY sad.ean
 ORDER BY qt DESC
 LIMIT 0, 1
 SQL;
         $stmt = $this->connection->executeQuery($sql, [Connection::PARAM_INT_ARRAY]);
         
-        return $stmt->fetch(\PDO::FETCH_NUM);
+        return $stmt->fetch(\PDO::FETCH_ASSOC);
     }
     
     /**
@@ -410,34 +414,45 @@ SQL;
      */
     private function getPictures(array $articleIds)
     {
+        $pictures = [];
+        $notFound = [];
         $sql = <<<SQL
-SELECT d.id, NULLIF(CONCAT_WS('.', i.img, i.extension), "") AS img, i.main
-FROM s_articles_details d
-  LEFT JOIN s_articles_img i ON (i.articleID = d.articleID)
-WHERE d.id IN (?)
+SELECT
+  im.article_detail_id                               AS id,
+  NULLIF(CONCAT_WS('.', imm.img, imm.extension), "") AS img,
+  im.main
+FROM s_articles_img im
+  INNER JOIN s_articles_img imm ON (im.parent_id = imm.id)
+WHERE im.article_detail_id = :articleDetailId
+ORDER BY im.main ASC;
 SQL;
-        $stmt = $this->connection->executeQuery($sql, [$articleIds], [Connection::PARAM_INT_ARRAY]);
-        $pictures = $stmt->fetchAll(\PDO::FETCH_GROUP);
-        
-        return $this->sortImgByMain($pictures);
-    }
-    
-    /**
-     * sort images array, returns main img as first
-     * @param $pictures
-     * @return mixed
-     */
-    private function sortImgByMain(array $pictures)
-    {
-        $sortedPics = [];
-        foreach ($pictures as $key => $artPics) {
-            usort($artPics, function ($a, $b) {
-                return $a['main'] - $b['main'];
-            });
-            $sortedPics[$key] = $artPics;
+        foreach ($articleIds as $articleId) {
+            $stmt = $this->connection->executeQuery($sql, [':articleDetailId' => $articleId]);
+            $pictures[$articleId] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            
+            if (count($pictures[$articleId]) === 0) {
+                $notFound[] = $articleId;
+            }
         }
         
-        return $sortedPics;
+        if (count($notFound) > 0) {
+            $sql = <<<SQL
+SELECT
+  d.id                                             AS id,
+  NULLIF(CONCAT_WS('.', im.img, im.extension), "") AS img,
+  im.main
+FROM s_articles_details d
+  LEFT JOIN s_articles_img im ON (im.articleID = d.articleID)
+WHERE d.id = :articleId
+ORDER BY im.main ASC;
+SQL;
+            foreach ($notFound as $articleId) {
+                $stmt = $this->connection->executeQuery($sql, [':articleId' => $articleId]);
+                $pictures[$articleId] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            }
+        }
+        
+        return $pictures;
     }
     
     /**
@@ -485,7 +500,7 @@ SQL;
             if (in_array(strtolower($valAr[1]), $ve, true)) {
                 $val = (float)$valAr[0] . ' ' . $valAr[1];
             } else {
-                $val = number_format($valAr[0], 2, ',', ' '). ' ' . $valAr[1];
+                $val = number_format($valAr[0], 2, ',', ' ') . ' ' . $valAr[1];
             }
         }
         

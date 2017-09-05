@@ -46,10 +46,10 @@ class Shopware_Controllers_Backend_HmExports extends Shopware_Controllers_Backen
         try {
             $id = $this->getApiClient()->importFiles()->post($callback, Constants::TYPE_PRODUCT_FEED);
             $res = !empty($id);
-            
-            $this->View()->assign(['success' => $res]);
+    
+            return $this->View()->assign(['success' => $res]);
         } catch (Exception $e) {
-            $this->View()->assign(['success' => false, 'message' => $e->getMessage()]);
+            return $this->View()->assign(['success' => false, 'message' => $e->getMessage()]);
         }
     }
     
