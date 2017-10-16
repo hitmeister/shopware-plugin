@@ -99,7 +99,7 @@ class StockManagement
         if ($stock === null) {
             $stock = new Stock();
             $stock->setArticleDetailId($detail);
-            $stock->setShopId($shop);
+            $stock->setShopId($shop->getId());
             $stock->setStatus(self::STATUS_NEW);
 
             Shopware()->Models()->persist($stock);
@@ -421,7 +421,7 @@ class StockManagement
         if ($stock === null) {
             $stock = new Stock();
             $stock->setArticleDetailId($detail);
-            $stock->setShopId($shop);
+            $stock->setShopId($shop->getId());
             $stock->setShippinggroup($shippingGroup);
             Shopware()->Models()->persist($stock);
         } else {

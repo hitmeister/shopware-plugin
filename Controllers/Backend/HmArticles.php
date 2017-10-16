@@ -343,7 +343,6 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
     {
         $detailsId = $this->Request()->getParam('id', null);
         $shopId = $this->Request()->getParam(self::SHOP_ID);
-
         $prepareSync = $this->prepareChangeSync($detailsId, $shopId);
 
         if (empty($prepareSync[self::ERROR_MSG])) {
