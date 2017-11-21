@@ -42,6 +42,8 @@ class StockManagement
     /** @var string */
     private $defaultCondition;
 
+    private $apiClients;
+
     /**
      * @param Client $apiClient
      * @param Connection $connection
@@ -450,7 +452,16 @@ class StockManagement
      */
     public function getApiClient($shopId)
     {
+        if ($shopId instanceof SwShop) {
+            $shopId = (int) $shopId->getId();
+        }
+
+        if (isset($this->apiClients[$shopId])) {
+            return $this->apiClients[$shopId];
+        }
+
         $shopConfig = Shop::getShopConfigByShopId($shopId);
+
         $apiUrl = $shopConfig->get('apiUrl');
         $clientKey = $shopConfig->get('clientKey');
         $secretKey = $shopConfig->get('secretKey');
@@ -466,6 +477,8 @@ class StockManagement
             ->setClientKey($clientKey)
             ->setClientSecret($secretKey);
 
-        return $builder->build();
+        $this->apiClients[$shopId] = $builder->build();
+
+        return $this->getApiClient($shopId);
     }
 }
