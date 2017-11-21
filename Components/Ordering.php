@@ -212,7 +212,7 @@ class Ordering
     private function getOrderId()
     {
         $number = Shopware()->Db()->fetchOne("/*NO LIMIT*/ SELECT number FROM s_order_number WHERE name='invoice' FOR UPDATE");
-        $number += 1;
+        $number++;
         
         Shopware()->Db()->executeUpdate("UPDATE s_order_number SET number = number + 1 WHERE name='invoice'");
         Shopware()->Db()->query('INSERT INTO s_order (ordernumber) VALUES (?)', [$number]);

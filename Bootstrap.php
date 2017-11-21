@@ -13,12 +13,10 @@ use ShopwarePlugins\HitmeMarketplace\Components\Shop;
 
 /**
  * Shopware plugin for the real.de market place
- *
  * Class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap
  */
 class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Components_Plugin_Bootstrap
 {
-    
     /**
      * {@inheritDoc}
      */
@@ -28,39 +26,40 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
             'install' => true,
             'enable' => true,
             'update' => true,
-            'secureUninstall' => true
+            'secureUninstall' => true,
         ];
     }
-    
+
     /**
      * {@inheritDoc}
      */
     public function getVersion()
     {
         $info = $this->getPluginJson();
-        
+
         return $info['currentVersion'];
     }
-    
+
     /**
      * {@inheritDoc}
      */
     public function getLabel()
     {
         $info = $this->getPluginJson();
-        
+
         return $info['label']['de'];
     }
-    
+
     /**
      * {@inheritDoc}
      */
     public function getInfo()
     {
         $info = $this->getPluginJson();
-        
+
         return array_merge(
-            parent::getInfo(), [
+            parent::getInfo(),
+            [
                 'author' => $info['author'],
                 'copyright' => $info['copyright'],
                 'license' => $info['license'],
@@ -69,16 +68,15 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
             ]
         );
     }
-    
+
     /**
      * {@inheritDoc}
      */
     public function enable()
     {
-        $shops = Shopware()->Models()->getRepository(
-            'Shopware\Models\Shop\Shop'
-        )->getActiveShops();
-        
+        $shops = Shopware()->Models()->getRepository('Shopware\Models\Shop\Shop')
+            ->getActiveShops();
+
         $result = false;
         foreach ($shops as $shop) {
             $shopConfig = Shop::getShopConfigByShopId($shop->getId());
@@ -89,33 +87,38 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
                 break;
             }
         }
-        
+
         return $result;
     }
-    
+
     /**
      * {@inheritDoc}
      */
     public function install()
     {
         $info = $this->getPluginJson();
-        
+
         if (!$this->assertMinimumVersion($info['compatibility']['minimumVersion'])) {
-            throw new Exception(sprintf('This plugin requires Shopware %s or a later version', $info['compatibility']['minimumVersion']));
+            throw new Exception(
+                sprintf(
+                    'This plugin requires Shopware %s or a later version',
+                    $info['compatibility']['minimumVersion']
+                )
+            );
         }
-        
+
         Schema::create();
         Attributes::create();
-        
+
         $this->createEvents();
         $this->createConfiguration();
         $this->createMenuEntry();
-        
+
         Callback::install($this->getVersion());
-        
+
         return ['success' => true, 'invalidateCache' => ['backend', 'proxy']];
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -125,20 +128,20 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
             if ($version === '1.0.0') {
                 Attributes::fixDev2210();
             }
-            
+
             if ($this->getVersion() === '2.0.0') {
                 Schema::create();
                 Attributes::copyAttributesInSchemaV200();
             }
-            
+
             Callback::update($this->getVersion(), $version);
-            
+
             return ['success' => true, 'invalidateCache' => ['backend', 'proxy']];
         } catch (Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -147,13 +150,15 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
         $this->secureUninstall();
         Callback::uninstall($this->getVersion());
         Schema::drop();
-        
+
         // delete Menu Snippet
-        Shopware()->Db()->exec('DELETE FROM s_core_snippets WHERE `name` = "Hm" AND `namespace` = "backend/index/view/main";');
-        
+        Shopware()->Db()->exec(
+            'DELETE FROM s_core_snippets WHERE `name` = "Hm" AND `namespace` = "backend/index/view/main";'
+        );
+
         return ['success' => true, 'invalidateCache' => ['backend', 'proxy']];
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -161,12 +166,12 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
     {
         $this->Application()->Loader()->registerNamespace('ShopwarePlugins\HitmeMarketplace', $this->Path());
         $this->registerCustomModels();
-        
+
         // API SDK
         $sdkPath = ('production' != Shopware()->Environment()) ? 'vendor/hitmeister/api-sdk/src/' : 'Lib/Api/';
         $this->Application()->Loader()->registerNamespace('Hitmeister\Component\Api', $this->Path() . $sdkPath);
     }
-    
+
     /**
      * Will register the DispatchLoopStartup event
      */
@@ -174,7 +179,7 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
     {
         $this->subscribeEvent('Enlight_Controller_Front_DispatchLoopStartup', 'onStartDispatch');
     }
-    
+
     /**
      * This callback function is triggered at the very beginning of the dispatch process and allows
      * us to register additional events on the fly.
@@ -184,30 +189,30 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
     public function onStartDispatch(Enlight_Event_EventArgs $args)
     {
         $path = $this->Path();
-        
+
         $shop = $args->getShop();
         $config = $this->collection->getConfig($this->name, $shop);
-        
+
         $subscribers = [
             new ControllerPath($path),
             new Resources($config),
             new Stock(),
-            new Ordering()
+            new Ordering(),
         ];
-        
+
         /** @var $subject \Enlight_Controller_Action */
         $subject = $args->get('subject');
         $request = $subject->Request();
-        
+
         if ($request->getModuleName() === 'backend') {
             $subscribers[] = new Backend($path);
         }
-        
+
         foreach ($subscribers as $subscriber) {
             $this->Application()->Events()->addSubscriber($subscriber);
         }
     }
-    
+
     /**
      * Creates configuration form
      */
@@ -215,7 +220,7 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
     {
         $form = new Form($this->Form());
         $form->create();
-        
+
         $translations = [
             'en_GB' => [
                 'plugin_form' => [
@@ -256,37 +261,39 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
                     'label' => 'Shipping: Default carrier',
                     'description' => 'Welchen Versanddienstleister nutzen Sie?',
                 ],
-            ]
+            ],
         ];
-        
+
         $form->translateForm($translations);
     }
-    
+
     /**
      * Creates the menu entry in the backend
      */
     private function createMenuEntry()
     {
-        $this->createMenuItem([
-            'label' => $this->getMenuLabel(),
-            'controller' => 'Hm',
-            'action' => 'Index',
-            'active' => 1,
-            'class' => 'real-icon',
-            'parent' => $this->Menu()->findOneBy(['label' => 'Marketing'])
-        ]);
+        $this->createMenuItem(
+            [
+                'label' => $this->getMenuLabel(),
+                'controller' => 'Hm',
+                'action' => 'Index',
+                'active' => 1,
+                'class' => 'real-icon',
+                'parent' => $this->Menu()->findOneBy(['label' => 'Marketing']),
+            ]
+        );
     }
-    
+
     /**
      * @return string
      */
     private function getMenuLabel()
     {
         $info = $this->getPluginJson();
-        
+
         return $info['menu_label'];
     }
-    
+
     /**
      * @return array
      */
@@ -296,7 +303,7 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
         if (null === $pluginInfo) {
             $pluginInfo = json_decode(file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'plugin.json'), true);
         }
-        
+
         return $pluginInfo;
     }
 }

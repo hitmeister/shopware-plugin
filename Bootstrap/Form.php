@@ -3,7 +3,6 @@
 namespace ShopwarePlugins\HitmeMarketplace\Bootstrap;
 
 use Hitmeister\Component\Api\Transfers\Constants;
-use Shopware\Models\Config\Element;
 use Shopware\Models\Config\ElementTranslation;
 use Shopware\Models\Config\Form as ConfigForm;
 use Shopware\Models\Config\FormTranslation;

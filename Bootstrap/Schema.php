@@ -37,11 +37,8 @@ class Schema
             //ignore
         }
         $tool->createSchema($classes);
-        
-        
     }
-    
-    
+
     public static function drop()
     {
         /** @var LoggerInterface $logger */

@@ -48,7 +48,7 @@ class Exporter
             return $filename;
         }
         
-        $handler = fopen($filename, 'w');
+        $handler = fopen($filename, 'wb');
         if (!$handler) {
             return false;
         }
@@ -109,19 +109,19 @@ class Exporter
         
         $sql = <<<SQL
 SELECT DISTINCT
-	d.id,
-	a.id AS article_id,
-	d.ean,
-	CONCAT_WS(', ', a.name, v.variant_text) AS title,
-	a.description_long AS description,
-	a.description AS short_description,
-	d.suppliernumber AS mpn,
-	s.name AS manufacturer,
-	CASE WHEN da.shippinggroup IS NOT NULL
+    d.id,
+    a.id AS article_id,
+    d.ean,
+    CONCAT_WS(', ', a.name, v.variant_text) AS title,
+    a.description_long AS description,
+    a.description AS short_description,
+    d.suppliernumber AS mpn,
+    s.name AS manufacturer,
+    CASE WHEN da.shippinggroup IS NOT NULL
        THEN da.shippinggroup
        ELSE ?
     END AS shipping_group,
-	CASE WHEN u.unit IS NOT NULL
+    CASE WHEN u.unit IS NOT NULL
        THEN CONCAT_WS(' ', IFNULL(d.purchaseunit, 1), u.unit)
        ELSE ''
     END AS content_volume
@@ -133,22 +133,22 @@ $innerJoin
 LEFT JOIN s_plugin_hitme_stock da ON (da.article_detail_id = d.id AND da.shop_id = ?)
 LEFT JOIN s_core_units u ON (u.id = d.unitID)
 LEFT JOIN (
-	SELECT
-		cor.article_id,
-		GROUP_CONCAT(co.name ORDER BY cg.position SEPARATOR ', ') AS variant_text
-	FROM s_article_configurator_option_relations cor
-	INNER JOIN s_article_configurator_options co ON (co.id = cor.option_id)
-	INNER JOIN s_article_configurator_groups cg ON (cg.id = co.group_id)
-	GROUP BY cor.article_id
+    SELECT
+        cor.article_id,
+        GROUP_CONCAT(co.name ORDER BY cg.position SEPARATOR ', ') AS variant_text
+    FROM s_article_configurator_option_relations cor
+    INNER JOIN s_article_configurator_options co ON (co.id = cor.option_id)
+    INNER JOIN s_article_configurator_groups cg ON (cg.id = co.group_id)
+    GROUP BY cor.article_id
 ) v ON (v.article_id = d.id)
 WHERE
-	d.ean IS NOT NULL AND
-	TRIM(d.ean) != '' AND
-	d.active = 1 AND
-	a.active = 1 AND
-	a.supplierID IS NOT NULL AND
-	(da.status NOT IN ('%s') OR da.status IS NULL) AND
-	a.id IN (SELECT cat.articleID FROM s_articles_categories_ro cat WHERE cat.categoryID = ? GROUP BY cat.articleID)
+    d.ean IS NOT NULL AND
+    TRIM(d.ean) != '' AND
+    d.active = 1 AND
+    a.active = 1 AND
+    a.supplierID IS NOT NULL AND
+    (da.status NOT IN ('%s') OR da.status IS NULL) AND
+    a.id IN (SELECT cat.articleID FROM s_articles_categories_ro cat WHERE cat.categoryID = ? GROUP BY cat.articleID)
 SQL;
         
         $sql = sprintf($sql, StockManagement::STATUS_BLOCKED);

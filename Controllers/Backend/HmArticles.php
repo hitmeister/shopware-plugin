@@ -355,7 +355,15 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
 
                 return $this->View()->assign(['success' => true]);
             } catch (Exception $e) {
-                return $this->View()->assign(['success' => false, 'message' => $e->getMessage()]);
+                return $this->View()->assign(
+                    [
+                        'success' => false,
+                        'message' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString()
+                    ]
+                );
             }
         } else {
             return $this->View()->assign(['success' => false, 'message' => $prepareSync[self::ERROR_MSG][0]]);
@@ -375,7 +383,18 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
             return $this->View()->assign(['success' => false, 'message' => sprintf('Shop %d not found!', $shopId)]);
         }
 
-        $sql = "SELECT d.`id` FROM `s_articles_details` d LEFT JOIN `s_plugin_hitme_stock` a ON d.id = a.article_detail_id WHERE d.`ean` IS NOT NULL AND d.`ean` != '' AND (a.`status` NOT IN (?) OR a.`status` IS NULL ) AND d.articleID IN(SELECT cat.articleID FROM s_articles_categories_ro cat WHERE cat.categoryID = ? GROUP BY cat.articleID)";
+        $sql = "SELECT d.`id`
+                FROM `s_articles_details` d
+                LEFT JOIN `s_plugin_hitme_stock` a ON d.id = a.article_detail_id
+                WHERE d.`ean` IS NOT NULL AND d.`ean` != ''
+                AND (a.`status` NOT IN (?) OR a.`status` IS NULL )
+                AND d.articleID IN
+                ( 
+                    SELECT cat.articleID
+                    FROM s_articles_categories_ro cat
+                    WHERE cat.categoryID = ?
+                    GROUP BY cat.articleID
+                )";
 
         try {
             /** @var \Doctrine\DBAL\Connection $connection */
