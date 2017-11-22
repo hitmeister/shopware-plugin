@@ -71,8 +71,6 @@ class Shopware_Controllers_Backend_Hm extends Shopware_Controllers_Backend_ExtJs
                 'data' => []
             ]);
         }
-        
-        
     }
     
     public function getShippingGroupsAction()
@@ -112,9 +110,6 @@ class Shopware_Controllers_Backend_Hm extends Shopware_Controllers_Backend_ExtJs
         return $this->get('HmApi');
     }
     
-    /**
-     * @return Client
-     */
     private function resetApiClient()
     {
         Shopware()->Container()->reset('HmApi');

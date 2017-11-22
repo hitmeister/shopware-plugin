@@ -63,8 +63,8 @@ class ControllerPath implements SubscriberInterface
 
         if (preg_match($this->regexp, $arguments->getName(), $m)) {
             return sprintf('%sControllers/%s/Hm%s.php', $this->bootstrapPath, $m[1], $m[2]);
-        } else {
-            return null;
         }
+
+        return null;
     }
 }
