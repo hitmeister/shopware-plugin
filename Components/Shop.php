@@ -19,7 +19,7 @@ class Shop
     {
         $subShops = [];
         $shops = Shopware()->Models()->getRepository('Shopware\Models\Shop\Shop')->getActiveShops();
-        /** @var \Shopware\Models\Shop\Shop $shop */
+        /** @var SwShop $shop */
         foreach ((array)$shops as $shop) {
             $shopId = $shop->getId();
             $shopConfig = self::getShopConfigByShopId($shopId);
@@ -39,7 +39,8 @@ class Shop
 
     public static function getShopConfigByShopId($shopId)
     {
-        $shop = Shopware()->Models()->find("Shopware\\Models\\Shop\\Shop", $shopId);
+        $shop = Shopware()->Models()->find(SwShop::class, $shopId);
+
         return self::getSwShopConfigByShop($shop);
     }
 
@@ -49,7 +50,7 @@ class Shop
         $config['shop'] = $shop;
         $config['db'] = Shopware()->Db();
 
-        return  new \Shopware_Components_Config($config);
+        return new \Shopware_Components_Config($config);
     }
 
     /**
@@ -66,7 +67,7 @@ class Shop
     {
         $shopConfig = self::getShopConfigByShopId($shopId);
         /* @var $shop \Shopware\Models\Shop\Shop */
-        $shop = Shopware()->Models()->find("Shopware\\Models\\Shop\\Shop", $shopId);
+        $shop = Shopware()->Models()->find(SwShop::class, $shopId);
         $host = $shop->getMain() !== null ? $shop->getMain()->getHost() : $shop->getHost();
         $basePath = $shop->getMain() !== null ? $shop->getMain()->getBasePath() : $shop->getBasePath();
         $baseUrl = $shop->getBaseUrl();
@@ -82,5 +83,41 @@ class Shop
         $baseFile = $shopConfig->get('baseFile');
 
         return $shopUrl . DIRECTORY_SEPARATOR . ($withBaseFile ? $baseFile : '');
+    }
+
+    /**
+     * @param $articleId
+     * @return null|object|SwShop
+     * @throws \Doctrine\ORM\TransactionRequiredException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Doctrine\ORM\ORMInvalidArgumentException
+     * @throws \Doctrine\ORM\ORMException
+     */
+    public static function getShopByArticleId($articleId)
+    {
+        $shopId = self::getShopIdByArticleId($articleId);
+        /* @var SwShop $shop */
+        return Shopware()->Models()->find(SwShop::class, $shopId);
+    }
+
+    /**
+     * @param $articleId
+     *
+     * @return int
+     * @throws \Doctrine\ORM\TransactionRequiredException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Doctrine\ORM\ORMInvalidArgumentException
+     * @throws \Doctrine\ORM\ORMException
+     */
+    public static function getShopIdByArticleId($articleId)
+    {
+        $sql = <<<SQL
+SELECT scs.id
+FROM s_articles_categories_ro sacr INNER JOIN s_categories sc ON sacr.categoryID= sc.id
+  INNER JOIN s_core_shops scs ON sc.id = scs.category_id
+WHERE articleID = ?
+AND sc.path IS NULL
+SQL;
+        return Shopware()->Db()->fetchOne($sql, $articleId) ?: 1;
     }
 }

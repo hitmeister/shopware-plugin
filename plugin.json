@@ -4,7 +4,7 @@
     "en": "real.de - Online shopping portal"
   },
   "menu_label": "real.de",
-  "currentVersion": "2.1.3",
+  "currentVersion": "2.1.4",
   "author": "real,- SB-Warenhaus GmbH",
   "copyright": "Copyright © 2015, real,- SB-Warenhaus GmbH",
   "license": "proprietary",
@@ -12,6 +12,7 @@
   "link": "https://www.real.de",
   "changelog": {
     "de": {
+      "2.1.4": "Fix bug exporting article variants images",
       "2.1.3": "Compatibility with PHP 7.0.x. Synchronizing order status of 'Other' and 'Deutsche Post' carries. Fixes violations according to the SensioLabsInsight report. Importing Shipping costs. Fix bug by exporting article variants",
       "2.1.2": "Fix problems by updating article stock and synchronisation with empty article attributes",
       "2.1.1": "Add custom attributes",
@@ -31,6 +32,7 @@
       "1.0.0": "First release"
     },
     "en": {
+      "2.1.4": "Fix bug exporting article variants images",
       "2.1.3": "Compatibility with PHP 7.0.x. Synchronizing order status of 'Other' and 'Deutsche Post' carries. Fixes violations according to the SensioLabsInsight report. Importing Shipping costs. Fix bug by exporting article variants",
       "2.1.2": "Fix problems by updating article stock and synchronisation with empty article attributes",
       "2.1.1": "Add custom attributes",

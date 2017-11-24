@@ -4,7 +4,9 @@ namespace ShopwarePlugins\HitmeMarketplace\Components;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DBALException;
+use Exception;
 use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
+use sSystem;
 
 /**
  * Class Exporter
@@ -46,7 +48,7 @@ class Exporter
             return $filename;
         }
         
-        $handler = fopen($filename, 'w');
+        $handler = fopen($filename, 'wb');
         if (!$handler) {
             return false;
         }
@@ -76,11 +78,12 @@ class Exporter
      * @param resource $handler
      *
      * @throws DBALException
+     * @throws Exception
      */
     private function buildFeed($handler)
     {
-        /** @var \sSystem $system */
-        $system = Shopware()->Bootstrap()->getResource('System');
+        /** @var sSystem $system */
+        $system = Shopware()->Container()->get('System');
         $imageDir = $system->sPathArticleImg;
         $shop = Shopware()->Shop();
         $shopId = $shop->getId();
@@ -106,19 +109,19 @@ class Exporter
         
         $sql = <<<SQL
 SELECT DISTINCT
-	d.id,
-	a.id AS article_id,
-	d.ean,
-	CONCAT_WS(', ', a.name, v.variant_text) AS title,
-	a.description_long AS description,
-	a.description AS short_description,
-	d.suppliernumber AS mpn,
-	s.name AS manufacturer,
-	CASE WHEN da.shippinggroup IS NOT NULL
+    d.id,
+    a.id AS article_id,
+    d.ean,
+    CONCAT_WS(', ', a.name, v.variant_text) AS title,
+    a.description_long AS description,
+    a.description AS short_description,
+    d.suppliernumber AS mpn,
+    s.name AS manufacturer,
+    CASE WHEN da.shippinggroup IS NOT NULL
        THEN da.shippinggroup
        ELSE ?
     END AS shipping_group,
-	CASE WHEN u.unit IS NOT NULL
+    CASE WHEN u.unit IS NOT NULL
        THEN CONCAT_WS(' ', IFNULL(d.purchaseunit, 1), u.unit)
        ELSE ''
     END AS content_volume
@@ -130,22 +133,22 @@ $innerJoin
 LEFT JOIN s_plugin_hitme_stock da ON (da.article_detail_id = d.id AND da.shop_id = ?)
 LEFT JOIN s_core_units u ON (u.id = d.unitID)
 LEFT JOIN (
-	SELECT
-		cor.article_id,
-		GROUP_CONCAT(co.name ORDER BY cg.position SEPARATOR ', ') AS variant_text
-	FROM s_article_configurator_option_relations cor
-	INNER JOIN s_article_configurator_options co ON (co.id = cor.option_id)
-	INNER JOIN s_article_configurator_groups cg ON (cg.id = co.group_id)
-	GROUP BY cor.article_id
+    SELECT
+        cor.article_id,
+        GROUP_CONCAT(co.name ORDER BY cg.position SEPARATOR ', ') AS variant_text
+    FROM s_article_configurator_option_relations cor
+    INNER JOIN s_article_configurator_options co ON (co.id = cor.option_id)
+    INNER JOIN s_article_configurator_groups cg ON (cg.id = co.group_id)
+    GROUP BY cor.article_id
 ) v ON (v.article_id = d.id)
 WHERE
-	d.ean IS NOT NULL AND
-	TRIM(d.ean) != '' AND
-	d.active = 1 AND
-	a.active = 1 AND
-	a.supplierID IS NOT NULL AND
-	(da.status NOT IN ('%s') OR da.status IS NULL) AND
-	a.id IN (SELECT cat.articleID FROM s_articles_categories_ro cat WHERE cat.categoryID = ? GROUP BY cat.articleID)
+    d.ean IS NOT NULL AND
+    TRIM(d.ean) != '' AND
+    d.active = 1 AND
+    a.active = 1 AND
+    a.supplierID IS NOT NULL AND
+    (da.status NOT IN ('%s') OR da.status IS NULL) AND
+    a.id IN (SELECT cat.articleID FROM s_articles_categories_ro cat WHERE cat.categoryID = ? GROUP BY cat.articleID)
 SQL;
         
         $sql = sprintf($sql, StockManagement::STATUS_BLOCKED);
@@ -243,9 +246,9 @@ SQL;
      */
     private function insertPicturesHeader($pos, array $header)
     {
-        $maxImgQt = $this->getMaxImgQt()[0];
+        $maxImgQt = $this->getMaxImgQt();
         
-        for ($i = $maxImgQt; $i >= 0; $i--) {
+        for ($i = $maxImgQt['qt'] - 1; $i >= 0; $i--) {
             array_splice($header, $pos, 0, 'picture_' . $i);
         }
         
@@ -261,19 +264,20 @@ SQL;
     {
         $sql = <<<SQL
 SELECT
-  count(sai.articleID) AS qt,
-  sad.ean
+  sad.articleID AS id,
+  count(sai.articleID) AS qt
 FROM s_articles_img sai
   INNER JOIN s_articles_details sad ON sai.articleID = sad.articleID
 WHERE NOT (sai.articleID <=> NULL)
       AND sad.ean != ''
+      AND sad.active = 1
 GROUP BY sad.ean
 ORDER BY qt DESC
 LIMIT 0, 1
 SQL;
         $stmt = $this->connection->executeQuery($sql, [Connection::PARAM_INT_ARRAY]);
         
-        return $stmt->fetch(\PDO::FETCH_NUM);
+        return $stmt->fetch(\PDO::FETCH_ASSOC);
     }
     
     /**
@@ -410,34 +414,45 @@ SQL;
      */
     private function getPictures(array $articleIds)
     {
+        $pictures = [];
+        $notFound = [];
         $sql = <<<SQL
-SELECT d.id, NULLIF(CONCAT_WS('.', i.img, i.extension), "") AS img, i.main
-FROM s_articles_details d
-  LEFT JOIN s_articles_img i ON (i.articleID = d.articleID)
-WHERE d.id IN (?)
+SELECT
+  im.article_detail_id                               AS id,
+  NULLIF(CONCAT_WS('.', imm.img, imm.extension), "") AS img,
+  im.main
+FROM s_articles_img im
+  INNER JOIN s_articles_img imm ON (im.parent_id = imm.id)
+WHERE im.article_detail_id = :articleDetailId
+ORDER BY im.main ASC;
 SQL;
-        $stmt = $this->connection->executeQuery($sql, [$articleIds], [Connection::PARAM_INT_ARRAY]);
-        $pictures = $stmt->fetchAll(\PDO::FETCH_GROUP);
-        
-        return $this->sortImgByMain($pictures);
-    }
-    
-    /**
-     * sort images array, returns main img as first
-     * @param $pictures
-     * @return mixed
-     */
-    private function sortImgByMain(array $pictures)
-    {
-        $sortedPics = [];
-        foreach ($pictures as $key => $artPics) {
-            usort($artPics, function ($a, $b) {
-                return $a['main'] - $b['main'];
-            });
-            $sortedPics[$key] = $artPics;
+        foreach ($articleIds as $articleId) {
+            $stmt = $this->connection->executeQuery($sql, [':articleDetailId' => $articleId]);
+            $pictures[$articleId] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            
+            if (count($pictures[$articleId]) === 0) {
+                $notFound[] = $articleId;
+            }
         }
         
-        return $sortedPics;
+        if (count($notFound) > 0) {
+            $sql = <<<SQL
+SELECT
+  d.id                                             AS id,
+  NULLIF(CONCAT_WS('.', im.img, im.extension), "") AS img,
+  im.main
+FROM s_articles_details d
+  LEFT JOIN s_articles_img im ON (im.articleID = d.articleID)
+WHERE d.id = :articleId
+ORDER BY im.main ASC;
+SQL;
+            foreach ($notFound as $articleId) {
+                $stmt = $this->connection->executeQuery($sql, [':articleId' => $articleId]);
+                $pictures[$articleId] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            }
+        }
+        
+        return $pictures;
     }
     
     /**
@@ -485,7 +500,7 @@ SQL;
             if (in_array(strtolower($valAr[1]), $ve, true)) {
                 $val = (float)$valAr[0] . ' ' . $valAr[1];
             } else {
-                $val = number_format($valAr[0], 2, ',', ' '). ' ' . $valAr[1];
+                $val = number_format($valAr[0], 2, ',', ' ') . ' ' . $valAr[1];
             }
         }
         

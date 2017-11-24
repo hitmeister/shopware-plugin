@@ -4,6 +4,7 @@ namespace ShopwarePlugins\HitmeMarketplace\Bootstrap;
 
 /**
  * Class Attributes
+ *
  * @package ShopwarePlugins\HitmeMarketplace\Bootstrap
  */
 class Attributes
@@ -13,11 +14,13 @@ class Attributes
         self::createCategoryAttributes();
         self::createOrderAttributes();
 
-        Shopware()->Models()->generateAttributeModels(array(
-            's_categories_attributes',
-            's_order_attributes',
-            's_order_details_attributes',
-        ));
+        Shopware()->Models()->generateAttributeModels(
+            [
+                's_categories_attributes',
+                's_order_attributes',
+                's_order_details_attributes',
+            ]
+        );
     }
 
     public static function createCategoryAttributes()
@@ -68,51 +71,61 @@ class Attributes
 
     public static function fixDev2210()
     {
-        Shopware()->Db()->query('ALTER TABLE `s_articles_attributes` MODIFY COLUMN `hm_status` VARCHAR(20) NULL DEFAULT NULL');
-        Shopware()->Db()->query('ALTER TABLE `s_order_details_attributes` MODIFY COLUMN `hm_status` VARCHAR(20) NULL DEFAULT NULL');
+        Shopware()->Db()->query(
+            'ALTER TABLE `s_articles_attributes` MODIFY COLUMN `hm_status` VARCHAR(20) NULL DEFAULT NULL'
+        );
+        Shopware()->Db()->query(
+            'ALTER TABLE `s_order_details_attributes` MODIFY COLUMN `hm_status` VARCHAR(20) NULL DEFAULT NULL'
+        );
     }
 
+    /**
+     * @TODO for SW5.3 use CRUD Service instead of Shopware()->Models()->removeAttribute();
+     */
     public static function copyAttributesInSchemaV200()
     {
         $defaultShopId = Shopware()->Plugins()->Backend()->HitmeMarketplace()->Config()->get('defaultShop');
-        if(empty($defaultShopId)){
+        if (empty($defaultShopId)) {
             throw new \Exception('This plugin config requires a default shop');
         }
 
-        $sql = Shopware()->Db()->select()->from('s_articles_attributes', array('articledetailsID','hm_unit_id','hm_last_access_date','hm_status'))->where('hm_unit_id IS NOT NULL');
+        $sql = Shopware()->Db()->select()
+            ->from('s_articles_attributes', ['articledetailsID', 'hm_unit_id', 'hm_last_access_date', 'hm_status'])
+            ->where('hm_unit_id IS NOT NULL');
         $res = Shopware()->Db()->fetchAll($sql);
-        foreach($res as $row){
-            $data = array(
-              'shop_id'             => $defaultShopId,
-              'article_detail_id'      => $row['articledetailsID'],
-              'unit_id'             => $row['hm_unit_id'],
-              'last_access_date'    => $row['hm_last_access_date'],
-              'status'              => $row['hm_status']
-            );
+        foreach ($res as $row) {
+            $data = [
+                'shop_id' => $defaultShopId,
+                'article_detail_id' => $row['articledetailsID'],
+                'unit_id' => $row['hm_unit_id'],
+                'last_access_date' => $row['hm_last_access_date'],
+                'status' => $row['hm_status'],
+            ];
             Shopware()->Db()->insert('s_plugin_hitme_stock', $data);
         }
 
         Shopware()->Models()->removeAttribute(
-          's_articles_attributes',
-          'hm',
-          'unit_id'
+            's_articles_attributes',
+            'hm',
+            'unit_id'
         );
 
         Shopware()->Models()->removeAttribute(
-          's_articles_attributes',
-          'hm',
-          'last_access_date'
+            's_articles_attributes',
+            'hm',
+            'last_access_date'
         );
 
         Shopware()->Models()->removeAttribute(
-          's_articles_attributes',
-          'hm',
-          'status'
+            's_articles_attributes',
+            'hm',
+            'status'
         );
 
-        Shopware()->Models()->generateAttributeModels(array(
-          's_articles_attributes'
-        ));
-
+        Shopware()->Models()->generateAttributeModels(
+            [
+                's_articles_attributes',
+            ]
+        );
     }
 }

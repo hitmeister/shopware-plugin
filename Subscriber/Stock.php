@@ -7,8 +7,9 @@ use Exception;
 use Psr\Log\LoggerInterface;
 use Shopware\CustomModels\HitmeMarketplace\Stock as StockEntity;
 use Shopware\Models\Article\Detail;
-use Shopware\Models\Shop\Shop;
+use Shopware\Models\Shop\Shop as SwShop;
 use ShopwarePlugins\HitmeMarketplace\Components\StockManagement;
+use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
 
 /**
  * Class Stock
@@ -63,9 +64,9 @@ class Stock implements SubscriberInterface
         /** @var StockManagement $stockManager */
         $stockManager = Shopware()->Container()->get('HmStockManagement');
 
-        /** @var Shop $shop */
-        $shop = Shopware()->Models()->getRepository('Shopware\Models\Shop\Shop')->findOneBy(['default' => true]);
-        
+        /** @var SwShop $shop */
+        $shop = HmShop::getShopByArticleId($detail->getArticleId());
+
         /** @var \Doctrine\ORM\EntityRepository $stockRepository */
         $stockRepository = Shopware()->Models()->getRepository('Shopware\CustomModels\HitmeMarketplace\Stock');
         $builder = $stockRepository->createQueryBuilder('Stock')
@@ -79,7 +80,7 @@ class Stock implements SubscriberInterface
         
         /** @var StockEntity $stock */
         $stock = $builder->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_OBJECT);
-        
+
         try {
             $res = $stockManager->syncByArticleDetails($detail, $shop, $stock, true);
             $logger->info('Stock auto update', ['number' => $detail->getNumber(), 'res' => (int)$res]);
