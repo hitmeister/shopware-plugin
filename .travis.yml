@@ -1,10 +1,8 @@
 ---
 language: php
-before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y zip
-before_script: composer install
+install: composer install
 script: 'echo "Ok!"'
+after_success: build/build.sh
 deploy:
   provider: releases
   api_key:
