@@ -1,0 +1,14 @@
+---
+language: php
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y zip
+deploy:
+  provider: releases
+  api_key:
+    secure: YOUR_API_KEY_ENCRYPTED
+  file: build/HitmeMarketplace.zip
+  skip_cleanup: true
+  overwrite: true
+  on:
+    tags: true
