@@ -3,6 +3,8 @@ language: php
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y zip
+before_script: composer install
+script: 'echo "Ok!"'
 deploy:
   provider: releases
   api_key:
