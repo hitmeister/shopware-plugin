@@ -4,12 +4,12 @@ use ShopwarePlugins\HitmeMarketplace\Bootstrap\Attributes;
 use ShopwarePlugins\HitmeMarketplace\Bootstrap\Callback;
 use ShopwarePlugins\HitmeMarketplace\Bootstrap\Form;
 use ShopwarePlugins\HitmeMarketplace\Bootstrap\Schema;
+use ShopwarePlugins\HitmeMarketplace\Components\Shop;
 use ShopwarePlugins\HitmeMarketplace\Subscriber\Backend;
 use ShopwarePlugins\HitmeMarketplace\Subscriber\ControllerPath;
 use ShopwarePlugins\HitmeMarketplace\Subscriber\Ordering;
 use ShopwarePlugins\HitmeMarketplace\Subscriber\Resources;
 use ShopwarePlugins\HitmeMarketplace\Subscriber\Stock;
-use ShopwarePlugins\HitmeMarketplace\Components\Shop;
 
 /**
  * Shopware plugin for the real.de market place
@@ -26,18 +26,8 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
             'install' => true,
             'enable' => true,
             'update' => true,
-            'secureUninstall' => true,
+            'secureUninstall' => true
         ];
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function getVersion()
-    {
-        $info = $this->getPluginJson();
-
-        return $info['currentVersion'];
     }
 
     /**
@@ -48,6 +38,19 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
         $info = $this->getPluginJson();
 
         return $info['label']['de'];
+    }
+
+    /**
+     * @return array
+     */
+    private function getPluginJson()
+    {
+        static $pluginInfo;
+        if (null === $pluginInfo) {
+            $pluginInfo = json_decode(file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'plugin.json'), true);
+        }
+
+        return $pluginInfo;
     }
 
     /**
@@ -93,6 +96,7 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
 
     /**
      * {@inheritDoc}
+     * @throws \Exception
      */
     public function install()
     {
@@ -120,6 +124,105 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
     }
 
     /**
+     * Will register the DispatchLoopStartup event
+     */
+    private function createEvents()
+    {
+        $this->subscribeEvent('Enlight_Controller_Front_DispatchLoopStartup', 'onStartDispatch');
+    }
+
+    /**
+     * Creates configuration form
+     */
+    private function createConfiguration()
+    {
+        $form = new Form($this->Form());
+        $form->create();
+
+        $translations = [
+            'en_GB' => [
+                'plugin_form' => [
+                    'description' => '<p>real.de ist eines der größten deutschen Online-Shopping-Portale mitten im Herzen von Köln. 100% sicheres, einfaches, günstiges und persönliches Einkaufs- und Verkaufserlebnis. Die Zahlungsabwicklung und auch sämtliche Marketingmaßnahmen werden von real übernommen. Angebote werden anhand der EAN eingestellt, die Abrechnung erfolgt anhand eines einfachen Gebührenmodells. Bei Fragen steht Ihnen die Händlerbetreuung telefonisch unter <b>+49-221-975979-79</b> oder per E-Mail an <b>partnermanagement@hitmeister.de</b> gerne zur Verfügung.</p><p>Um zu starten, bitten wir Sie die unten abgefragten Informationen zu hinterlegen, damit die Abwicklung zwischen Ihrem System und Hitmeister reibungslos funktioniert.  Einige der Informationen finden Sie in Ihrem real-Versandpartner Account unter Shopeinstellungen, daher bitten wir Sie, sich parallel in Ihrem real-Account einzuloggen.</p>'
+                ],
+                'openForm' => [
+                    'label' => 'New customer?'
+                ],
+                'clientKey' => [
+                    'label' => 'API: Client key',
+                    'description' => 'Diese Information finden Sie im Hitmeister Account unter Shopseinstellungen; API.'
+                ],
+                'secretKey' => [
+                    'label' => 'API: Secret key',
+                    'description' => 'Diese Information finden Sie im Hitmeister-Account unter Shopseinstellungen; API.'
+                ],
+                'apiUrl' => [
+                    'label' => 'API: URL',
+                    'description' => 'Welche API Version nutzen Sie'
+                ],
+                'defaultDelivery' => [
+                    'label' => 'Stock: Default delivery time',
+                    'description' => 'Sollten Sie bei Artikeln keine Lieferzeit hinterlegt haben, dann wird diese hier eingetragene Lieferzeit automatisch hinterlegt.'
+                ],
+                'defaultCondition' => [
+                    'label' => 'Stock: Default article condition',
+                    'description' => 'Bitte legen Sie den globalen Artikelzustand fest. Diese Einstellung wird für alle auf Hitmeister angebotenen Artikel übernommen.'
+                ],
+                'defaultDeliveryMethod' => [
+                    'label' => 'Orders: Default delivery method',
+                    'description' => 'Bitte verknüpfen Sie Ihre Shopware Versandart.'
+                ],
+                'defaultPaymentMethod' => [
+                    'label' => 'Orders: Default payment method',
+                    'description' => 'Bitte wählen Sie eine Bezahlmethode, die Ihrem System mitteilt, dass der Kauf bereits bezahlt ist, da Hitmeister die Zahlungsabwicklung für Sie übernimmt.'
+                ],
+                'defaultCarrier' => [
+                    'label' => 'Shipping: Default carrier',
+                    'description' => 'Welchen Versanddienstleister nutzen Sie?'
+                ]
+            ]
+        ];
+
+        $form->translateForm($translations);
+    }
+
+    /**
+     * Creates the menu entry in the backend
+     */
+    private function createMenuEntry()
+    {
+        $this->createMenuItem(
+            [
+                'label' => $this->getMenuLabel(),
+                'controller' => 'Hm',
+                'action' => 'Index',
+                'active' => 1,
+                'class' => 'real-icon',
+                'parent' => $this->Menu()->findOneBy(['label' => 'Marketing'])
+            ]
+        );
+    }
+
+    /**
+     * @return string
+     */
+    private function getMenuLabel()
+    {
+        $info = $this->getPluginJson();
+
+        return $info['menu_label'];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getVersion()
+    {
+        $info = $this->getPluginJson();
+
+        return $info['currentVersion'];
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function update($version)
@@ -134,9 +237,14 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
                 Attributes::copyAttributesInSchemaV200();
             }
 
+            if ($this->getVersion() === '2.1.5') {
+                $this->createConfiguration();
+                Form::updateForm();
+            }
+
             Callback::update($this->getVersion(), $version);
 
-            return ['success' => true, 'invalidateCache' => ['backend', 'proxy']];
+            return ['success' => true, 'invalidateCache' => ['config', 'http', 'proxy', 'backend']];
         } catch (Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
@@ -168,16 +276,8 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
         $this->registerCustomModels();
 
         // API SDK
-        $sdkPath = ('production' != Shopware()->Environment()) ? 'vendor/hitmeister/api-sdk/src/' : 'Lib/Api/';
+        $sdkPath = ('production' !== Shopware()->Environment()) ? 'vendor/hitmeister/api-sdk/src/' : 'Lib/Api/';
         $this->Application()->Loader()->registerNamespace('Hitmeister\Component\Api', $this->Path() . $sdkPath);
-    }
-
-    /**
-     * Will register the DispatchLoopStartup event
-     */
-    private function createEvents()
-    {
-        $this->subscribeEvent('Enlight_Controller_Front_DispatchLoopStartup', 'onStartDispatch');
     }
 
     /**
@@ -197,7 +297,7 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
             new ControllerPath($path),
             new Resources($config),
             new Stock(),
-            new Ordering(),
+            new Ordering()
         ];
 
         /** @var $subject \Enlight_Controller_Action */
@@ -211,99 +311,5 @@ class Shopware_Plugins_Backend_HitmeMarketplace_Bootstrap extends Shopware_Compo
         foreach ($subscribers as $subscriber) {
             $this->Application()->Events()->addSubscriber($subscriber);
         }
-    }
-
-    /**
-     * Creates configuration form
-     */
-    private function createConfiguration()
-    {
-        $form = new Form($this->Form());
-        $form->create();
-
-        $translations = [
-            'en_GB' => [
-                'plugin_form' => [
-                    'description' => '<p>real.de ist eines der größten deutschen Online-Shopping-Portale mitten im Herzen von Köln. 100% sicheres, einfaches, günstiges und persönliches Einkaufs- und Verkaufserlebnis. Die Zahlungsabwicklung und auch sämtliche Marketingmaßnahmen werden von real übernommen. Angebote werden anhand der EAN eingestellt, die Abrechnung erfolgt anhand eines einfachen Gebührenmodells. Bei Fragen steht Ihnen die Händlerbetreuung telefonisch unter <b>+49-221-975979-79</b> oder per E-Mail an <b>partnermanagement@hitmeister.de</b> gerne zur Verfügung.</p><p>Um zu starten, bitten wir Sie die unten abgefragten Informationen zu hinterlegen, damit die Abwicklung zwischen Ihrem System und Hitmeister reibungslos funktioniert.  Einige der Informationen finden Sie in Ihrem real-Versandpartner Account unter Shopeinstellungen, daher bitten wir Sie, sich parallel in Ihrem real-Account einzuloggen.</p>',
-                ],
-                'openForm' => [
-                    'label' => 'New customer?',
-                ],
-                'clientKey' => [
-                    'label' => 'API: Client key',
-                    'description' => 'Diese Information finden Sie im Hitmeister Account unter Shopseinstellungen; API.',
-                ],
-                'secretKey' => [
-                    'label' => 'API: Secret key',
-                    'description' => 'Diese Information finden Sie im Hitmeister-Account unter Shopseinstellungen; API.',
-                ],
-                'apiUrl' => [
-                    'label' => 'API: URL',
-                    'description' => 'Welche API Version nutzen Sie',
-                ],
-                'defaultDelivery' => [
-                    'label' => 'Stock: Default delivery time',
-                    'description' => 'Sollten Sie bei Artikeln keine Lieferzeit hinterlegt haben, dann wird diese hier eingetragene Lieferzeit automatisch hinterlegt.',
-                ],
-                'defaultCondition' => [
-                    'label' => 'Stock: Default article condition',
-                    'description' => 'Bitte legen Sie den globalen Artikelzustand fest. Diese Einstellung wird für alle auf Hitmeister angebotenen Artikel übernommen.',
-                ],
-                'defaultDeliveryMethod' => [
-                    'label' => 'Orders: Default delivery method',
-                    'description' => 'Bitte verknüpfen Sie Ihre Shopware Versandart.',
-                ],
-                'defaultPaymentMethod' => [
-                    'label' => 'Orders: Default payment method',
-                    'description' => 'Bitte wählen Sie eine Bezahlmethode, die Ihrem System mitteilt, dass der Kauf bereits bezahlt ist, da Hitmeister die Zahlungsabwicklung für Sie übernimmt.',
-                ],
-                'defaultCarrier' => [
-                    'label' => 'Shipping: Default carrier',
-                    'description' => 'Welchen Versanddienstleister nutzen Sie?',
-                ],
-            ],
-        ];
-
-        $form->translateForm($translations);
-    }
-
-    /**
-     * Creates the menu entry in the backend
-     */
-    private function createMenuEntry()
-    {
-        $this->createMenuItem(
-            [
-                'label' => $this->getMenuLabel(),
-                'controller' => 'Hm',
-                'action' => 'Index',
-                'active' => 1,
-                'class' => 'real-icon',
-                'parent' => $this->Menu()->findOneBy(['label' => 'Marketing']),
-            ]
-        );
-    }
-
-    /**
-     * @return string
-     */
-    private function getMenuLabel()
-    {
-        $info = $this->getPluginJson();
-
-        return $info['menu_label'];
-    }
-
-    /**
-     * @return array
-     */
-    private function getPluginJson()
-    {
-        static $pluginInfo;
-        if (null === $pluginInfo) {
-            $pluginInfo = json_decode(file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'plugin.json'), true);
-        }
-
-        return $pluginInfo;
     }
 }

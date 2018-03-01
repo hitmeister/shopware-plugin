@@ -26,10 +26,11 @@ class Callback
     /**
      * @param string $currentVersion
      * @param string $previousVersion
+     * @throws \Exception
      */
     public static function update($currentVersion, $previousVersion)
     {
-        if ('production' !== Shopware()->Environment()) {
+        if ('production' !== Shopware()->Container()->getParameter('kernel.environment')) {
             return;
         }
         static::call(static::collectData('update', $currentVersion, $previousVersion));
@@ -56,14 +57,14 @@ class Callback
             'scheme' => 'https',
             'uri' => '/notifications/shopware/',
             'headers' => [
-                'Host' => ['www.hitmeister.de'],
+                'Host' => ['www.real.de']
             ],
             'body' => json_encode($data),
             'client' => [
                 'connect_timeout' => 5,
                 'timeout' => 5,
-                'verify' => false,
-            ],
+                'verify' => false
+            ]
         ];
 
         try {
@@ -91,7 +92,7 @@ class Callback
             'version_previous' => $previousVersion ?: $currentVersion,
             'version_sw' => \Shopware::VERSION,
             'version_php' => PHP_VERSION,
-            'url' => Shopware()->Front()->Router()->assemble(),
+            'url' => Shopware()->Front()->Router()->assemble()
         ];
     }
 }

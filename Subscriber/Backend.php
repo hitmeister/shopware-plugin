@@ -3,6 +3,8 @@
 namespace ShopwarePlugins\HitmeMarketplace\Subscriber;
 
 use Enlight\Event\SubscriberInterface;
+use Enlight_Controller_Action;
+use Enlight_Event_EventArgs;
 
 /**
  * Class Backend
@@ -35,11 +37,11 @@ class Backend implements SubscriberInterface
     /**
      * Provides the Hitmeister logo in the backend
      *
-     * @param \Enlight_Event_EventArgs $args
+     * @param Enlight_Event_EventArgs $args
      */
-    public function onPostDispatchIndex(\Enlight_Event_EventArgs $args)
+    public function onPostDispatchIndex(Enlight_Event_EventArgs $args)
     {
-        /* @var \Enlight_Controller_Action $subject */
+        /* @var Enlight_Controller_Action $subject */
         $subject = $args->get('subject');
         $view = $subject->View();
         

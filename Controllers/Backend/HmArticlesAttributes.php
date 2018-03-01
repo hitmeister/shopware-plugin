@@ -1,6 +1,7 @@
 <?php
 
 use Shopware\Components\CSRFWhitelistAware;
+use ShopwarePlugins\HitmeMarketplace\Bootstrap\Attributes;
 
 /**
  * Class Shopware_Controllers_Backend_HmArticlesAttributes
@@ -55,16 +56,7 @@ class Shopware_Controllers_Backend_HmArticlesAttributes extends Shopware_Control
      */
     private function getArticlesAttributes()
     {
-        /** @var array $dbCfg */
-        $dbCfg = $this->db->getConfig();
-        $dbName = $dbCfg['dbname'];
-
-        $sql = "SELECT COLUMN_NAME FROM information_schema.COLUMNS
-                WHERE TABLE_SCHEMA = ?
-                      AND TABLE_NAME = 's_articles_attributes'
-                      AND COLUMN_NAME NOT IN ('id', 'articledetailsID', 'articleID')";
-
-        $attributes = Shopware()->Db()->fetchCol($sql, $dbName);
+        $attributes = Attributes::getAttributesColumnNames();
 
         $data = [];
         foreach ($attributes as $attribute) {

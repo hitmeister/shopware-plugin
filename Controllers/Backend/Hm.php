@@ -1,7 +1,7 @@
 <?php
 
 use Hitmeister\Component\Api\Client;
-use ShopwarePlugins\HitmeMarketplace\Components\Shop;
+use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
 use Shopware\Components\CSRFWhitelistAware;
 
 /**
@@ -12,12 +12,13 @@ class Shopware_Controllers_Backend_Hm extends Shopware_Controllers_Backend_ExtJs
     public function checkConfigAction()
     {
         try {
-            $shops = Shop::getActiveShops();
+            $shops = HmShop::getActiveShops();
             $message = false;
             if (count($shops)) {
                 foreach ($shops as $shop) {
                     $this->resetApiClient();
                     $this->Request()->setParam('shopId', $shop['id']);
+                    /** @var \Shopware_Components_Config $shopConfig */
                     $shopConfig = $shop['hm_config'];
                     $defaultShippingGroup = $shopConfig->get('defaultshippinggroup');
                     if ($this->getApiClient() !== false) {
@@ -44,10 +45,10 @@ class Shopware_Controllers_Backend_Hm extends Shopware_Controllers_Backend_ExtJs
     
     public function getActiveShopsAction()
     {
-        $shops = Shop::getActiveShops();
-        $setDefaultShop = $this->Request()->getParam('setDefaultShop', 0);
+        $shops = HmShop::getActiveShops();
+        $setDefaultShop = (int)$this->Request()->getParam('setDefaultShop', 0);
         if (count($shops)) {
-            if ($setDefaultShop == 1) {
+            if ($setDefaultShop === 1) {
                 /** @var $namespace Enlight_Components_Snippet_Namespace */
                 $namespace = Shopware()->Snippets()->getNamespace('backend/hm/view/stock');
                 $defaultShop = [[
