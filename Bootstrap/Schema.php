@@ -5,6 +5,7 @@ namespace ShopwarePlugins\HitmeMarketplace\Bootstrap;
 use Doctrine\ORM\Tools\SchemaTool;
 use Exception;
 use Psr\Log\LoggerInterface;
+use Shopware\CustomModels\HitmeMarketplace\Stock;
 
 /**
  * Class Schema
@@ -28,7 +29,7 @@ class Schema
         $tool = new SchemaTool($em);
         
         $classes = [
-            $em->getClassMetadata('Shopware\CustomModels\HitmeMarketplace\Stock')
+            $em->getClassMetadata(Stock::class)
         ];
         
         try {
@@ -48,7 +49,7 @@ class Schema
         $tool = new SchemaTool($em);
         
         $classes = [
-            $em->getClassMetadata('Shopware\CustomModels\HitmeMarketplace\Stock')
+            $em->getClassMetadata(Stock::class)
         ];
         
         try {

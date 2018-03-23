@@ -15,10 +15,14 @@ class Shop
 
     protected $shopConfigRaw;
 
+    /**
+     * @return array
+     * @throws \Doctrine\ORM\ORMInvalidArgumentException
+     */
     public static function getActiveShops()
     {
         $subShops = [];
-        $shops = Shopware()->Models()->getRepository('Shopware\Models\Shop\Shop')->getActiveShops();
+        $shops = Shopware()->Models()->getRepository(SwShop::class)->getActiveShops();
         /** @var SwShop $shop */
         foreach ((array)$shops as $shop) {
             $shopId = $shop->getId();
@@ -37,9 +41,14 @@ class Shop
         return $subShops;
     }
 
+    /**
+     * @param $shopId
+     * @return \Shopware_Components_Config
+     * @throws \Doctrine\ORM\ORMInvalidArgumentException
+     */
     public static function getShopConfigByShopId($shopId)
     {
-        $shop = Shopware()->Models()->find(SwShop::class, $shopId);
+        $shop = Shopware()->Models()->getRepository(SwShop::class)->find($shopId);
 
         return self::getSwShopConfigByShop($shop);
     }
@@ -58,16 +67,13 @@ class Shop
      * @param bool $withBaseFile
      *
      * @return string
-     * @throws \Doctrine\ORM\TransactionRequiredException
-     * @throws \Doctrine\ORM\OptimisticLockException
      * @throws \Doctrine\ORM\ORMInvalidArgumentException
-     * @throws \Doctrine\ORM\ORMException
      */
     public static function getShopUrl($shopId, $withBaseFile = false)
     {
         $shopConfig = self::getShopConfigByShopId($shopId);
         /* @var $shop \Shopware\Models\Shop\Shop */
-        $shop = Shopware()->Models()->find(SwShop::class, $shopId);
+        $shop = Shopware()->Models()->getRepository(SwShop::class)->find($shopId);
         $host = $shop->getMain() !== null ? $shop->getMain()->getHost() : $shop->getHost();
         $basePath = $shop->getMain() !== null ? $shop->getMain()->getBasePath() : $shop->getBasePath();
         $baseUrl = $shop->getBaseUrl();
@@ -104,10 +110,6 @@ class Shop
      * @param $articleId
      *
      * @return int
-     * @throws \Doctrine\ORM\TransactionRequiredException
-     * @throws \Doctrine\ORM\OptimisticLockException
-     * @throws \Doctrine\ORM\ORMInvalidArgumentException
-     * @throws \Doctrine\ORM\ORMException
      */
     public static function getShopIdByArticleId($articleId)
     {

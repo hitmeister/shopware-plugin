@@ -234,11 +234,10 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
 
     /**
      * @return Enlight_View|Enlight_View_Default
-     * @throws \Doctrine\ORM\TransactionRequiredException
-     * @throws \Doctrine\ORM\OptimisticLockException
-     * @throws \Doctrine\ORM\ORMInvalidArgumentException
-     * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\NonUniqueResultException
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Doctrine\ORM\TransactionRequiredException
      */
     public function changeShippinggroupByIdAction()
     {
@@ -268,15 +267,13 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
     /**
      * prepare data for changeShippinggroupByIdAction and syncStockByIdAction
      *
-     * @param int $detailId
-     * @param int $shopId
-     *
+     * @param $detailId
+     * @param $shopId
      * @return array
      * @throws \Doctrine\ORM\NonUniqueResultException
-     * @throws \Doctrine\ORM\TransactionRequiredException
-     * @throws \Doctrine\ORM\OptimisticLockException
-     * @throws \Doctrine\ORM\ORMInvalidArgumentException
      * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Doctrine\ORM\TransactionRequiredException
      */
     private function prepareChangeSync($detailId, $shopId)
     {
@@ -285,8 +282,8 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
         $detail = null;
         /** @var Shopware\Models\Shop\Shop $shop */
         $shop = null;
-        /** @var Shopware\CustomModels\HitmeMarketplace\Stock $stock */
-        $stock = null;
+        /** @var Shopware\CustomModels\HitmeMarketplace\Stock $hmStock */
+        $hmStock = null;
 
         if ($detailId !== null) {
             try {
@@ -318,14 +315,14 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
                 'articleDetailId' => $detail->getId()
             ]);
 
-            $stock = $builder->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_OBJECT);
+            $hmStock = $builder->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_OBJECT);
         }
 
         return [
             self::ERROR_MSG => $errorMessages,
             self::DETAIL => $detail,
             self::SHOP => $shop,
-            self::STOCK => $stock
+            self::STOCK => $hmStock
         ];
     }
 
@@ -334,10 +331,9 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
      *
      * @return Enlight_View|Enlight_View_Default
      * @throws \Doctrine\ORM\NonUniqueResultException
-     * @throws \Doctrine\ORM\TransactionRequiredException
-     * @throws \Doctrine\ORM\OptimisticLockException
-     * @throws \Doctrine\ORM\ORMInvalidArgumentException
      * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Doctrine\ORM\TransactionRequiredException
      */
     public function syncStockByIdAction()
     {
@@ -439,7 +435,7 @@ class Shopware_Controllers_Backend_HmArticles extends Shopware_Controllers_Backe
                     'unit_id' => null
                 ],
                 [
-                    'shop_id' => (int)$shopId,
+                    'shop_id' => (int)$shopId
                 ],
                 [
                     'status' => PDO::PARAM_STR,

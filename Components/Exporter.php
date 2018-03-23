@@ -3,8 +3,9 @@
 namespace ShopwarePlugins\HitmeMarketplace\Components;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException;
 use Exception;
+use Shopware\Models\Shop\Shop as SwShop;
+use ShopwarePlugins\HitmeMarketplace\Bootstrap\Attributes;
 use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
 use sSystem;
 
@@ -18,12 +19,12 @@ class Exporter
      * @var Connection
      */
     private $connection;
-    
+
     /**
      * @var string
      */
     private $cacheDir;
-    
+
     /**
      * @param Connection $connection
      * @param string $cacheDir
@@ -33,33 +34,34 @@ class Exporter
         $this->connection = $connection;
         $this->cacheDir = $cacheDir;
     }
-    
+
     /**
      * @param string $id
+     * @param int $shopId
      *
      * @return bool|string
-     * @throws \Doctrine\DBAL\DBALException
+     * @throws Exception
      */
-    public function getFeed($id)
+    public function getFeed($id, $shopId)
     {
         $filename = $this->getFilename($id);
-        
+
         if (file_exists($filename)) {
             return $filename;
         }
-        
+
         $handler = fopen($filename, 'wb');
         if (!$handler) {
             return false;
         }
-        
-        $this->buildFeed($handler);
-        
+
+        $this->buildFeed($handler, $shopId);
+
         fclose($handler);
-        
+
         return $filename;
     }
-    
+
     /**
      * @param string $id
      *
@@ -70,45 +72,45 @@ class Exporter
         if (!file_exists($this->cacheDir . '/hm/')) {
             mkdir($this->cacheDir . '/hm/', 0777);
         }
-        
+
         return $this->cacheDir . sprintf('/hm/product_feed_%s.csv', $id);
     }
-    
+
     /**
      * @param resource $handler
      *
-     * @throws DBALException
      * @throws Exception
      */
-    private function buildFeed($handler)
+    private function buildFeed($handler, $shopId)
     {
         /** @var sSystem $system */
         $system = Shopware()->Container()->get('System');
         $imageDir = $system->sPathArticleImg;
-        $shop = Shopware()->Shop();
-        $shopId = $shop->getId();
+
+        /** @var SwShop $shop */
+        $shop = Shopware()->Models()->find('Shopware\Models\Shop\Shop', $shopId);
         $categoryId = $shop->getCategory()->getId();
         $shopConfig = HmShop::getShopConfigByShopId($shopId);
         $shippingGroup = $shopConfig->get('defaultShippingGroup');
-        
+
         $customArticleAttributes = $shopConfig->get('customArticleAttributes');
         $articlesAttributes = null;
         $innerJoin = '';
-        
+
         $header = ['ean', 'title', 'description', 'short_description', 'category', 'mpn', 'manufacturer', 'content_volume', 'shipping_group'];
-        $header = $this->insertPicturesHeader(5, $header);
-        
+        $header = $this->insertPicturesHeader(5, $header, $categoryId);
+
         if ($customArticleAttributes !== '') {
             $articlesAttributes = $this->getArticlesAttributes($customArticleAttributes);
-            $innerJoin = 'INNER JOIN s_articles_attributes saa ON a.id = saa.articleID';
-            $header = $this->extendsHeader($header, $customArticleAttributes);
+            $innerJoin = 'INNER JOIN s_articles_attributes saa ON d.id = saa.articledetailsID';
+            $header = $this->extendsHeader($header, $articlesAttributes);
         }
-        
+
         $limit = 100;
         $offset = 0;
-        
+
         $sql = <<<SQL
-SELECT DISTINCT
+SELECT DISTINCT 
     d.id,
     a.id AS article_id,
     d.ean,
@@ -150,35 +152,34 @@ WHERE
     (da.status NOT IN ('%s') OR da.status IS NULL) AND
     a.id IN (SELECT cat.articleID FROM s_articles_categories_ro cat WHERE cat.categoryID = ? GROUP BY cat.articleID)
 SQL;
-        
+
         $sql = sprintf($sql, StockManagement::STATUS_BLOCKED);
         $writeData = [];
-        
+
         while (true) {
             $stmt = $this->connection->executeQuery(
                 $sql . sprintf(' LIMIT %d,%d', $offset, $limit),
                 [$shippingGroup, $shopId, $categoryId]
             );
-            
+
             $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             if (empty($data)) {
                 break;
             }
-            
+
             $ids = array_column($data, 'article_id', 'id');
             $categories = $this->getCategories($ids);
-            
             $pictures = $this->getPictures(array_keys($ids));
             list($attributes, $attributeKeys) = $this->getAttributes(array_keys($ids));
-            
+
             foreach ((array)$attributeKeys as $attributeKey) {
                 if (!in_array($attributeKey, $header, true)) {
                     $header[] = $attributeKey;
                 }
             }
-            
+
             unset($attributeKeys);
-            
+
             foreach ($data as $item) {
                 $line = [];
                 foreach ($header as $title) {
@@ -208,18 +209,18 @@ SQL;
                             }
                             break;
                     }
-                    
+
                     $line[] = $this->escape($value);
                 }
-                
+
                 $writeData[] = $line;
             }
             unset($stmt, $data, $ids, $categories, $attributes, $pictures);
             $offset += $limit;
         }
-        
+
         fwrite($handler, preg_replace('/picture_\d/', 'picture', implode(';', $header)) . ";\n");
-        
+
         if (!empty($writeData)) {
             $headerLength = count($header);
             foreach ($writeData as $line) {
@@ -230,37 +231,37 @@ SQL;
                         $lineLength++;
                     }
                 }
-                
+
                 fwrite($handler, implode(';', $line) . ";\n");
             }
         }
     }
-    
+
     /**
      * inserts pictures header
      *
      * @param int $pos
      * @param array $header
+     * @param $catId
      * @return array
-     * @throws DBALException
      */
-    private function insertPicturesHeader($pos, array $header)
+    private function insertPicturesHeader($pos, array $header, $catId)
     {
-        $maxImgQt = $this->getMaxImgQt();
-        
+        $maxImgQt = $this->getMaxImgQt($catId);
+
         for ($i = $maxImgQt['qt'] - 1; $i >= 0; $i--) {
             array_splice($header, $pos, 0, 'picture_' . $i);
         }
-        
+
         return $header;
     }
-    
+
     /**
      * returns max article image qt
+     * @param $catId
      * @return array
-     * @throws DBALException
      */
-    private function getMaxImgQt()
+    private function getMaxImgQt($catId)
     {
         $sql = <<<SQL
 SELECT
@@ -271,34 +272,39 @@ FROM s_articles_img sai
 WHERE NOT (sai.articleID <=> NULL)
       AND sad.ean != ''
       AND sad.active = 1
+      AND sai.main = 2
+      AND sad.articleID IN (SELECT articleID FROM s_articles_categories_ro WHERE categoryID = $catId)
 GROUP BY sad.ean
 ORDER BY qt DESC
 LIMIT 0, 1
 SQL;
         $stmt = $this->connection->executeQuery($sql, [Connection::PARAM_INT_ARRAY]);
-        
+
         return $stmt->fetch(\PDO::FETCH_ASSOC);
     }
-    
+
     /**
      * concatenate the articles attributes for the sql query
      *
      * @param $customArticleAttributes
      *
      * @return string
+     * @throws Exception
      */
     private function getArticlesAttributes($customArticleAttributes)
     {
+        $columns = Attributes::getAttributesColumnNames();
+        $custom = array_filter(array_map('trim', $customArticleAttributes));
         $select = [];
-        foreach ((array)$customArticleAttributes as $attribute) {
-            if ($attribute !== '' && strlen($attribute) > 0) {
+        foreach ($custom as $attribute) {
+            if (in_array($attribute, $columns, true) === true) {
                 $select[] = 'saa.' . $attribute;
             }
         }
-        
+
         return count(array_filter($select)) > 0 ? ', ' . implode(', ', $select) : '';
     }
-    
+
     /**
      * extends the csv file header
      *
@@ -309,24 +315,25 @@ SQL;
      */
     private function extendsHeader($header, $customArticleAttributes)
     {
-        foreach ((array)$customArticleAttributes as $attribute) {
-            $header[] = $attribute;
+        $custom = array_filter(array_map('trim', explode(',', $customArticleAttributes)));
+
+        foreach ($custom as $attribute) {
+            $header[] = str_replace('saa.', '', $attribute);
         }
-        
+
         return $header;
     }
-    
+
     /**
      * @param array $ids
      *
      * @return array
-     * @throws \Doctrine\DBAL\DBALException
      */
     private function getCategories($ids)
     {
         $articleIds = array_unique(array_values($ids));
         $mapping = $this->getHmMapping($articleIds);
-        
+
         $data = [];
         foreach ($ids as $detailId => $detailArticleId) {
             if (isset($mapping[$detailArticleId])) {
@@ -334,7 +341,7 @@ SQL;
                 unset($ids[$detailId]);
             }
         }
-        
+
         if (count($ids) > 0) {
             $mapping = $this->getSwMapping($articleIds);
             foreach ($ids as $detailId => $detailArticleId) {
@@ -343,22 +350,21 @@ SQL;
                     unset($ids[$detailId]);
                 }
             }
-            
+
             if (count($ids) > 0) {
                 foreach ($ids as $detailId => $detailArticleId) {
                     $data[$detailId] = '';
                 }
             }
         }
-        
+
         return $data;
     }
-    
+
     /**
      * @param array $articleIds
      *
      * @return array
-     * @throws \Doctrine\DBAL\DBALException
      */
     private function getHmMapping(array $articleIds)
     {
@@ -369,22 +375,21 @@ LEFT JOIN s_categories_attributes ca ON (cro.categoryID = ca.categoryID)
 WHERE cro.articleID IN (?) AND ca.hm_category_title IS NOT NULL
 GROUP BY cro.articleID;
 SQL;
-        
+
         $stmt = $this->connection->executeQuery($sql, [$articleIds], [Connection::PARAM_INT_ARRAY]);
         $mapping = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
         array_walk($mapping, function (&$value) {
             $items = explode('~|~', $value);
             $value = reset($items);
         });
-        
+
         return $mapping;
     }
-    
+
     /**
      * @param array $articleIds
      *
      * @return array
-     * @throws \Doctrine\DBAL\DBALException
      */
     private function getSwMapping(array $articleIds)
     {
@@ -395,22 +400,21 @@ INNER JOIN s_categories c ON (ac.categoryID = c.id)
 WHERE ac.articleID IN (?)
 GROUP BY ac.articleID;
 SQL;
-        
+
         $stmt = $this->connection->executeQuery($sql, [$articleIds], [Connection::PARAM_INT_ARRAY]);
         $mapping = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
         array_walk($mapping, function (&$value) {
             $items = explode('~|~', $value);
             $value = reset($items);
         });
-        
+
         return $mapping;
     }
-    
+
     /**
      * @param array $articleIds
      *
      * @return array
-     * @throws \Doctrine\DBAL\DBALException
      */
     private function getPictures(array $articleIds)
     {
@@ -429,12 +433,12 @@ SQL;
         foreach ($articleIds as $articleId) {
             $stmt = $this->connection->executeQuery($sql, [':articleDetailId' => $articleId]);
             $pictures[$articleId] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            
+
             if (count($pictures[$articleId]) === 0) {
                 $notFound[] = $articleId;
             }
         }
-        
+
         if (count($notFound) > 0) {
             $sql = <<<SQL
 SELECT
@@ -451,15 +455,14 @@ SQL;
                 $pictures[$articleId] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             }
         }
-        
+
         return $pictures;
     }
-    
+
     /**
      * @param array $articleIds
      *
      * @return array
-     * @throws DBALException
      */
     private function getAttributes(array $articleIds)
     {
@@ -472,7 +475,7 @@ WHERE cor.article_id IN (?)
 SQL;
         $stmt = $this->connection->executeQuery($sql, [$articleIds], [Connection::PARAM_INT_ARRAY]);
         $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        
+
         $keys = [];
         $result = [];
         foreach ($data as $item) {
@@ -482,10 +485,10 @@ SQL;
             $result[$item['article_id']][$item['key']] = $item['value'];
             $keys[] = $item['key'];
         }
-        
+
         return [$result, array_unique($keys)];
     }
-    
+
     /**
      * Formats content volume value
      * @param $value
@@ -503,10 +506,10 @@ SQL;
                 $val = number_format($valAr[0], 2, ',', ' ') . ' ' . $valAr[1];
             }
         }
-        
+
         return $val;
     }
-    
+
     /**
      * @param string $line
      *
@@ -517,17 +520,17 @@ SQL;
         if (false !== strpos($line, ';')) {
             $line = '"' . str_replace('"', '""', $line) . '"';
         }
-        
+
         return str_replace(["\n", "\r"], ['\n', '\t'], $line);
     }
-    
+
     /**
      * @param $id
      */
     public function flushCache($id)
     {
         $filename = $this->getFilename($id);
-        
+
         if (file_exists($filename)) {
             @unlink($filename);
         }

@@ -4,34 +4,21 @@
     "en": "real.de - Online shopping portal"
   },
   "menu_label": "real.de",
-  "currentVersion": "2.1.4",
+  "currentVersion": "2.1.5",
   "author": "real,- SB-Warenhaus GmbH",
   "copyright": "Copyright © 2015, real,- SB-Warenhaus GmbH",
   "license": "proprietary",
   "support": "support@real.de",
   "link": "https://www.real.de",
   "changelog": {
-    "de": {
-      "2.1.4": "Fix bug exporting article variants images",
-      "2.1.3": "Compatibility with PHP 7.0.x. Synchronizing order status of 'Other' and 'Deutsche Post' carries. Fixes violations according to the SensioLabsInsight report. Importing Shipping costs. Fix bug by exporting article variants",
-      "2.1.2": "Fix problems by updating article stock and synchronisation with empty article attributes",
-      "2.1.1": "Add custom attributes",
-      "2.1.0": "Update for SW 5.2.x",
-      "2.0.1": "Add Carrier- and Trackingcode-Functionality",
-      "2.0.0": "Add Subshop-Functionality",
-      "1.0.10": "Upgrade Hitmeister SDK",
-      "1.0.9": "Fix issue with missing attributes of article;",
-      "1.0.8": "Improve products export and price compilation;",
-      "1.0.7": "Fix unit price calculation;",
-      "1.0.6": "Add manufacturer and content volume to the product feed;",
-      "1.0.5": "Update SDK to 0.1.1 version;",
-      "1.0.4": "Fix product data exporter;",
-      "1.0.3": "Fix and issue with order notifications;",
-      "1.0.2": "Added logs;",
-      "1.0.1": "Bugfix: Tables may not be configured correctly;",
-      "1.0.0": "First release"
-    },
     "en": {
+      "2.1.5": {
+        "1": "Fix bug exporting articles without shipping group",
+        "2": "Fix bug exporting articles with non existing attributes",
+        "3": "Set all orders to completely paid",
+        "4": "Fix bug articles attributes combo editable",
+        "5": "Change API URL"
+      },
       "2.1.4": "Fix bug exporting article variants images",
       "2.1.3": "Compatibility with PHP 7.0.x. Synchronizing order status of 'Other' and 'Deutsche Post' carries. Fixes violations according to the SensioLabsInsight report. Importing Shipping costs. Fix bug by exporting article variants",
       "2.1.2": "Fix problems by updating article stock and synchronisation with empty article attributes",

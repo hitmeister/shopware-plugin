@@ -2,6 +2,10 @@
 
 namespace ShopwarePlugins\HitmeMarketplace\Bootstrap;
 
+use Exception;
+use Shopware\Bundle\AttributeBundle\Service\CrudService;
+use Zend_Db_Adapter_Pdo_Mysql;
+
 /**
  * Class Attributes
  *
@@ -18,7 +22,7 @@ class Attributes
             [
                 's_categories_attributes',
                 's_order_attributes',
-                's_order_details_attributes',
+                's_order_details_attributes'
             ]
         );
     }
@@ -80,13 +84,14 @@ class Attributes
     }
 
     /**
-     * @TODO for SW5.3 use CRUD Service instead of Shopware()->Models()->removeAttribute();
+     * @throws \InvalidArgumentException
+     * @throws Exception
      */
     public static function copyAttributesInSchemaV200()
     {
         $defaultShopId = Shopware()->Plugins()->Backend()->HitmeMarketplace()->Config()->get('defaultShop');
         if (empty($defaultShopId)) {
-            throw new \Exception('This plugin config requires a default shop');
+            throw new Exception('This plugin config requires a default shop');
         }
 
         $sql = Shopware()->Db()->select()
@@ -99,33 +104,45 @@ class Attributes
                 'article_detail_id' => $row['articledetailsID'],
                 'unit_id' => $row['hm_unit_id'],
                 'last_access_date' => $row['hm_last_access_date'],
-                'status' => $row['hm_status'],
+                'status' => $row['hm_status']
             ];
             Shopware()->Db()->insert('s_plugin_hitme_stock', $data);
         }
 
-        Shopware()->Models()->removeAttribute(
-            's_articles_attributes',
-            'hm',
-            'unit_id'
-        );
+        /** @var CrudService $crudService */
+        $crudService = Shopware()->Container()->get('shopware_attribute.crud_service');
 
-        Shopware()->Models()->removeAttribute(
-            's_articles_attributes',
-            'hm',
-            'last_access_date'
-        );
-
-        Shopware()->Models()->removeAttribute(
-            's_articles_attributes',
-            'hm',
-            'status'
-        );
+        $crudService->delete('s_articles_attributes', 'hm_unit_id');
+        $crudService->delete('s_articles_attributes', 'hm_last_access_date');
+        $crudService->delete('s_articles_attributes', 'hm_last_status');
 
         Shopware()->Models()->generateAttributeModels(
             [
-                's_articles_attributes',
+                's_articles_attributes'
             ]
         );
+    }
+
+    /**
+     * returns column names of s_articles_attributes
+     *
+     * @return array
+     * @throws Exception
+     */
+    public static function getAttributesColumnNames()
+    {
+        /** @var Zend_Db_Adapter_Pdo_Mysql $db Pdo adapter for Mysql */
+        $db = Shopware()->Container()->get('db');
+
+        /** @var array $dbCfg */
+        $dbCfg = $db->getConfig();
+        $dbName = $dbCfg['dbname'];
+
+        $sql = "SELECT COLUMN_NAME FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = ?
+                      AND TABLE_NAME = 's_articles_attributes'
+                      AND COLUMN_NAME NOT IN ('id', 'articledetailsID', 'articleID')";
+
+        return Shopware()->Db()->fetchCol($sql, $dbName);
     }
 }

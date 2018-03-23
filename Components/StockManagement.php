@@ -3,6 +3,8 @@
 namespace ShopwarePlugins\HitmeMarketplace\Components;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\ORM\OptimisticLockException;
+use Doctrine\ORM\ORMInvalidArgumentException;
 use Exception;
 use Hitmeister\Component\Api\Client;
 use Hitmeister\Component\Api\ClientBuilder;
@@ -12,7 +14,7 @@ use Hitmeister\Component\Api\Transfers\Constants;
 use Hitmeister\Component\Api\Transfers\UnitAddTransfer;
 use Hitmeister\Component\Api\Transfers\UnitUpdateTransfer;
 use Psr\Log\LoggerInterface;
-use Shopware\CustomModels\HitmeMarketplace\Stock;
+use Shopware\CustomModels\HitmeMarketplace\Stock as HmStock;
 use Shopware\Models\Article\Detail;
 use Shopware\Models\Shop\Shop as SwShop;
 use ShopwarePlugins\HitmeMarketplace\Components\Shop as HmShop;
@@ -63,8 +65,10 @@ class StockManagement
     }
 
     /**
-     * @param int $id
-     * @param int $shopId
+     * @param $id
+     * @param $shopId
+     * @throws Exception
+     * @throws \Doctrine\DBAL\DBALException
      */
     public function blockByDetailId($id, $shopId)
     {
@@ -82,24 +86,62 @@ class StockManagement
     }
 
     /**
-     * @param int $shopId
+     * @param $shopId
+     * @return Client|bool
+     * @throws Exception
+     */
+    public function getApiClient($shopId)
+    {
+        if ($shopId instanceof SwShop) {
+            $shopId = (int)$shopId->getId();
+        }
+
+        if (isset($this->apiClients[$shopId])) {
+            return $this->apiClients[$shopId];
+        }
+
+        $shopConfig = HmShop::getShopConfigByShopId($shopId);
+
+        $apiUrl = $shopConfig->get('apiUrl');
+        $clientKey = $shopConfig->get('clientKey');
+        $secretKey = $shopConfig->get('secretKey');
+
+        if ($clientKey === null || $secretKey === null) {
+            return false;
+        }
+
+        $builder = new ClientBuilder();
+        $builder
+            ->setLogger(Shopware()->Container()->get('pluginlogger'))
+            ->setBaseUrl($apiUrl)
+            ->setClientKey($clientKey)
+            ->setClientSecret($secretKey);
+
+        $this->apiClients[$shopId] = $builder->build();
+
+        return $this->getApiClient($shopId);
+    }
+
+    /**
+     * @param $shopId
+     * @throws Exception
      */
     public function flushInventory($shopId)
     {
         $shopUrl = HmShop::getShopUrl($shopId, true);
-        $callback = $shopUrl . "?sViewport=Hm&sAction=flushCommand";
+        $callback = $shopUrl . '?sViewport=Hm&sAction=flushCommand';
         $this->getApiClient($shopId)->importFiles()->post($callback);
     }
 
     /**
      * @param Detail $detail
      * @param SwShop $shop
-     * @param Stock|null $stock
+     * @param HmStock|null $stock
      * @param bool $forceNotFound
      * @return bool
      * @throws Exception
      */
-    public function syncByArticleDetails(Detail $detail, SwShop $shop, Stock $stock = null, $forceNotFound = false)
+    public function syncByArticleDetails(Detail $detail, SwShop $shop, HmStock $stock = null, $forceNotFound = false)
     {
         // For some reason there may be no stock object
         if ($stock === null) {
@@ -108,7 +150,7 @@ class StockManagement
                 [
                     'shop_id' => $shop->getId(),
                     'article_detail_id' => $detail->getId(),
-                    'status' => self::STATUS_NEW,
+                    'status' => self::STATUS_NEW
                 ]
             );
 
@@ -185,12 +227,13 @@ class StockManagement
     }
 
     /**
-     * @param Stock $stock
-     * @return bool
-     * @throws \Doctrine\ORM\OptimisticLockException
-     * @throws \Doctrine\ORM\ORMInvalidArgumentException
+     * @param HmStock $stock
+     * @return mixed
+     * @throws ORMInvalidArgumentException
+     * @throws Exception
+     * @throws OptimisticLockException
      */
-    private function deleteUnit(Stock $stock)
+    private function deleteUnit(HmStock $stock)
     {
         $res = $this->getApiClient($stock->getShopId())->units()->delete($stock->getUnitId());
 
@@ -201,21 +244,21 @@ class StockManagement
     }
 
     /**
-     * @param Stock $stock
-     * @param string $status
-     * @throws \Doctrine\ORM\OptimisticLockException
+     * @param HmStock $stock
+     * @param $status
+     * @throws OptimisticLockException
      */
-    private function updateStatus(Stock $stock, $status)
+    private function updateStatus(HmStock $stock, $status)
     {
         $stock->setStatus($status);
         Shopware()->Models()->flush($stock);
     }
 
     /**
-     * @param Stock $stock
-     * @throws \Doctrine\ORM\OptimisticLockException
+     * @param HmStock $stock
+     * @throws OptimisticLockException
      */
-    private function updateLastAccess(Stock $stock)
+    private function updateLastAccess(HmStock $stock)
     {
         $stock->setLastAccessDate(date('Y-m-d H:i:s'));
         Shopware()->Models()->flush($stock);
@@ -227,7 +270,7 @@ class StockManagement
      * @return float
      * @throws Exception
      */
-    private function getPrice(Detail $detail, SwShop $shop)
+    public function getPrice(Detail $detail, SwShop $shop)
     {
         $priceGroup = $shop->getCustomerGroup()->getKey();
         $q = sprintf(
@@ -250,25 +293,26 @@ class StockManagement
     /**
      * @param Detail $detail
      * @param int $price
-     * @param Stock $stock
+     * @param HmStock $stock
      * @return bool
      * @throws Exception
      */
-    private function postUnit(Detail $detail, $price, Stock $stock)
+    public function postUnit(Detail $detail, $price, HmStock $stock)
     {
+        $shippingGroup = $this->getShippingGroup($stock);
         $transfer = new UnitAddTransfer();
         $transfer->ean = $detail->getEan();
         $transfer->condition = $this->defaultCondition;
-        $transfer->listing_price = (int) $price;
-        $transfer->minimum_price = (int) $price;
+        $transfer->listing_price = (int)$price;
+        $transfer->minimum_price = (int)$price;
         $transfer->amount = $detail->getInStock();
         $transfer->id_offer = $detail->getNumber();
         $transfer->note = $detail->getAdditionalText();
         $transfer->delivery_time = $this->getDeliveryTimeByDays($detail->getShippingTime());
-        $transfer->shipping_group = $this->getShippingGroup($stock);
+        $transfer->shipping_group = $shippingGroup;
 
         try {
-            $hmUnitId = $this->getApiClient($stock->getShopId())->units()->post($transfer);
+            $hmUnitId = $this->getApiClient($stock->getShopId()->getId())->units()->post($transfer);
         } // Not possible to sell this item (EAN not found)
         catch (ResourceNotFoundException $e) {
             $this->updateStatus($stock, self::STATUS_NOT_FOUND);
@@ -282,9 +326,10 @@ class StockManagement
 
         $stock->setStatus(self::STATUS_SYNCHRONIZING);
         $stock->setUnitId($hmUnitId);
+        $stock->setShippinggroup($shippingGroup);
         Shopware()->Models()->flush($stock);
 
-        return true;
+        return $this->updateUnit($hmUnitId, $detail, $price, $stock);
     }
 
     /**
@@ -296,7 +341,7 @@ class StockManagement
         if (null === $days || '' === $days) {
             return $this->defaultDelivery;
         }
-        $days = (int) $days;
+        $days = (int)$days;
 
         switch (true) {
             case $days <= 1:
@@ -321,14 +366,14 @@ class StockManagement
     }
 
     /**
-     * @param Stock $stock
+     * @param HmStock $stock
      * @return mixed
      */
-    private function getShippingGroup(Stock $stock)
+    private function getShippingGroup(HmStock $stock)
     {
         $shippingGroup = $stock->getShippinggroup();
         if (empty($shippingGroup)) {
-            $shopConfig = HmShop::getShopConfigByShopId($stock->getShopId());
+            $shopConfig = HmShop::getShopConfigByShopId($stock->getShopId()->getId());
             $shippingGroup = $shopConfig->get('defaultShippingGroup');
         }
 
@@ -339,11 +384,11 @@ class StockManagement
      * @param string $hmUnitId
      * @param Detail $detail
      * @param int $price
-     * @param Stock $stock
+     * @param HmStock $stock
      * @return bool
      * @throws Exception
      */
-    private function updateUnit($hmUnitId, Detail $detail, $price, Stock $stock)
+    private function updateUnit($hmUnitId, Detail $detail, $price, HmStock $stock)
     {
         $transfer = new UnitUpdateTransfer();
         $transfer->condition = $this->defaultCondition;
@@ -355,7 +400,7 @@ class StockManagement
         $transfer->delivery_time = $this->getDeliveryTimeByDays($detail->getShippingTime());
         $transfer->shipping_group = $this->getShippingGroup($stock);
 
-        $res = $this->getApiClient($stock->getShopId())->units()->update($hmUnitId, $transfer);
+        $res = $this->getApiClient($stock->getShopId()->getId())->units()->update($hmUnitId, $transfer);
 
         // Not found, lets post it again
         if (false === $res) {
@@ -370,9 +415,7 @@ class StockManagement
      *
      * @param $detailId
      * @return bool
-     * @throws \Doctrine\ORM\NonUniqueResultException
      * @throws Exception
-     * @throws \Doctrine\DBAL\DBALException
      */
     private function deleteAllUnits($detailId)
     {
@@ -381,7 +424,8 @@ class StockManagement
 
         // Get all Stock Unit-Ids by detailID
         $q = sprintf(
-            'SELECT `unit_id` FROM `s_plugin_hitme_stock` WHERE `article_detail_id` = %d AND `unit_id` !=""', $detailId
+            'SELECT `unit_id` FROM `s_plugin_hitme_stock` WHERE `article_detail_id` = %d AND `unit_id` !=""',
+            $detailId
         );
         $stmt = $this->connection->executeQuery($q);
 
@@ -390,14 +434,14 @@ class StockManagement
         if (!empty($data)) {
             foreach ($data as $item) {
                 // Get Stock-Object by unitID
-                /** @var Stock $stock */
+                /** @var HmStock $stock */
                 $stockRepository = Shopware()->Models()->getRepository('Shopware\CustomModels\HitmeMarketplace\Stock');
                 $builder = $stockRepository->createQueryBuilder('Stock')
                     ->where('Stock.unitId = :unitId');
 
                 $builder->setParameters(
                     [
-                        'unitId' => $item['unit_id'],
+                        'unitId' => $item['unit_id']
                     ]
                 );
 
@@ -422,15 +466,15 @@ class StockManagement
      * @param Detail $detail
      * @param SwShop $shop
      * @param string $shippingGroup
-     * @param Stock|null $stock
+     * @param HmStock|null $stock
      * @return bool
      * @throws Exception
      */
-    public function updateShippingGroup(Detail $detail, SwShop $shop, $shippingGroup, Stock $stock = null)
+    public function updateShippingGroup(Detail $detail, SwShop $shop, $shippingGroup, HmStock $stock = null)
     {
         // For some reason there may be no stock object
         if ($stock === null) {
-            $stock = new Stock();
+            $stock = new HmStock();
             $stock->setArticleDetailId($detail->getId());
             $stock->setShopId($shop->getId());
             $stock->setShippinggroup($shippingGroup);
@@ -438,47 +482,10 @@ class StockManagement
         } else {
             $stock->setShippinggroup($shippingGroup);
         }
-        // Shopware()->Models()->flush($stock);
 
         $price = $this->getPrice($detail, $shop);
         $this->postUnit($detail, $price, $stock);
 
         return true;
-    }
-
-    /**
-     * @param $shopId
-     * @return bool|Client
-     */
-    public function getApiClient($shopId)
-    {
-        if ($shopId instanceof SwShop) {
-            $shopId = (int) $shopId->getId();
-        }
-
-        if (isset($this->apiClients[$shopId])) {
-            return $this->apiClients[$shopId];
-        }
-
-        $shopConfig = Shop::getShopConfigByShopId($shopId);
-
-        $apiUrl = $shopConfig->get('apiUrl');
-        $clientKey = $shopConfig->get('clientKey');
-        $secretKey = $shopConfig->get('secretKey');
-
-        if ($clientKey === null || $secretKey === null) {
-            return false;
-        }
-
-        $builder = new ClientBuilder();
-        $builder
-            ->setLogger(Shopware()->Container()->get('pluginlogger'))
-            ->setBaseUrl($apiUrl)
-            ->setClientKey($clientKey)
-            ->setClientSecret($secretKey);
-
-        $this->apiClients[$shopId] = $builder->build();
-
-        return $this->getApiClient($shopId);
     }
 }

@@ -2,10 +2,6 @@
 
 namespace ShopwarePlugins\HitmeMarketplace\Components;
 
-use Doctrine\ORM\OptimisticLockException;
-use Doctrine\ORM\ORMException;
-use Doctrine\ORM\ORMInvalidArgumentException;
-use Doctrine\ORM\TransactionRequiredException;
 use Exception;
 use Hitmeister\Component\Api\Client;
 use Hitmeister\Component\Api\Transfers\AddressTransfer;
@@ -28,8 +24,6 @@ use Shopware\Models\Order\Shipping as OrderShipping;
 use Shopware\Models\Payment\Payment;
 use Shopware\Models\Shop\Shop;
 
-//use Shopware\Models\Payment\PaymentInstance;
-
 /**
  * Class Ordering
  * @package ShopwarePlugins\HitmeMarketplace\Components
@@ -37,29 +31,28 @@ use Shopware\Models\Shop\Shop;
 class Ordering
 {
     const COUNTRY_MODEL = 'Shopware\Models\Country\Country';
-    
+
     /** @var Client */
     private $apiClient;
-    
+
     /** @var int|string */
     private $deliveryMethodId;
-    
+
     /** @var int|string */
     private $paymentMethodId;
-    
+
     /** @var int|string */
     private $shop;
-    
+
     /**
      * Order constructor.
-     * @param Client $apiClient
+     *
+     * @param Client     $apiClient
      * @param int|string $deliveryMethod
      * @param int|string $paymentMethod
-     * @param Shop $shop
-     * @throws ORMException
-     * @throws ORMInvalidArgumentException
-     * @throws OptimisticLockException
-     * @throws TransactionRequiredException
+     * @param Shop       $shop
+     *
+     * @throws \Doctrine\ORM\ORMException
      */
     public function __construct(Client $apiClient, $deliveryMethod, $paymentMethod, Shop $shop)
     {
@@ -68,9 +61,10 @@ class Ordering
         $this->paymentMethodId = $paymentMethod;
         $this->shop = Shopware()->Models()->find('Shopware\Models\Shop\Shop', $shop->getId());
     }
-    
+
     /**
      * @param string $orderId
+     *
      * @return bool
      * @throws Exception
      */
@@ -79,52 +73,52 @@ class Ordering
         if ($this->isProcessed($orderId)) {
             return true;
         }
-        
+
         $hmOrder = $this->apiClient->orders()->get(
             $orderId,
             ['billing_address', 'buyer', 'seller_units', 'shipping_address']
         );
-        
+
         if (!$hmOrder) {
             throw new Exception('Order not found');
         }
-        
+
         $orderId = $this->getOrderId();
-        
+
         /** @var Order $orderModel */
         $orderModel = Shopware()->Models()->find('Shopware\Models\Order\Order', $orderId);
-        
+
         $customerModel = $this->getCustomer(
             $hmOrder->buyer->email,
             $hmOrder->billing_address,
             $hmOrder->shipping_address
         );
-        
+
         $orderModel->setCustomer($customerModel);
-        
+
         $dispatchModel = $this->getDeliveryMethod();
         $orderModel->setDispatch($dispatchModel);
-        
+
         $paymentModel = $this->getPaymentMethod();
         $orderModel->setPayment($paymentModel);
-        
+
         // 0 = order status open
         $orderStatusModel = Shopware()->Models()->getReference('Shopware\Models\Order\Status', 0);
         $orderModel->setOrderStatus($orderStatusModel);
-        
-        // 17 = payment status open
-        $paymentStatusModel = Shopware()->Models()->getReference('Shopware\Models\Order\Status', 17);
+
+        // 12 = payment status completely_paid
+        $paymentStatusModel = Shopware()->Models()->getReference('Shopware\Models\Order\Status', 12);
         $orderModel->setPaymentStatus($paymentStatusModel);
-        
+
         $languageSubShopModel = $this->getShop();
         $orderModel->setLanguageSubShop($languageSubShopModel);
         $orderModel->setShop($languageSubShopModel);
-        
+
         $shippingRate = $hmOrder->seller_units[0]->shipping_rate;
-        
+
         $orderModel->setOrderTime(new \DateTime('now'));
         $orderModel->setDeviceType('real.de');
-        
+
         $orderModel->setTransactionId($hmOrder->id_order);
         $orderModel->setComment('');
         $orderModel->setCustomerComment('');
@@ -134,13 +128,13 @@ class Ordering
         $orderModel->setReferer('');
         $orderModel->setTrackingCode('');
         $orderModel->setRemoteAddress('');
-        
+
         $currencyModel = $languageSubShopModel->getCurrency();
         $orderModel->setCurrencyFactor($currencyModel->getFactor());
         $orderModel->setCurrency($currencyModel->getCurrency());
-        
+
         $total = $totalNet = 0;
-        
+
         /** @var OrderDetail[] $details */
         $details = [];
         foreach ($hmOrder->seller_units as $hmUnit) {
@@ -149,18 +143,18 @@ class Ordering
             $total += $price;
             $totalNet += $priceNet;
         }
-        
+
         $total += $shippingRate;
         $totalNet += $shippingRate / 1.9;
-        
+
         $orderModel->setInvoiceShipping(round($shippingRate / 100, 2));
         $orderModel->setInvoiceShippingNet(round(($shippingRate / 1.19) / 100, 2));
-        
+
         $orderModel->setInvoiceAmount(round($total / 100, 2));
         $orderModel->setInvoiceAmountNet(round($totalNet / 100, 2));
-        
+
         $orderModel->setDetails($details);
-        
+
         $orderAttributeModel = new \Shopware\Models\Attribute\Order();
         $orderAttributeModel->setAttribute1('');
         $orderAttributeModel->setAttribute2('');
@@ -169,69 +163,64 @@ class Ordering
         $orderAttributeModel->setAttribute5('');
         $orderAttributeModel->setAttribute6('');
         $orderAttributeModel->setHmOrderId($hmOrder->id_order ?: '');
-        
+
         $orderModel->setAttribute($orderAttributeModel);
-        
+
         $billingModel = $this->createBillingAddress($customerModel->getDefaultBillingAddress());
         $orderModel->setBilling($billingModel);
-        
+
         $shippingModel = $this->createShippingAddress($customerModel->getDefaultShippingAddress());
         $orderModel->setShipping($shippingModel);
-        
-        //$paymentInstance = $this->preparePaymentInstance($orderModel);
-        //$orderModel->setPaymentInstances($paymentInstance);
-        
+
         Shopware()->Models()->persist($orderModel);
         Shopware()->Models()->flush();
-        
+
         if (null === $billingModel->getState()) {
             Shopware()->Db()->update('s_order_billingaddress', ['stateID' => 0], ['id' => $billingModel->getId()]);
         }
         if (null === $shippingModel->getState()) {
             Shopware()->Db()->update('s_order_shippingaddress', ['stateID' => 0], ['id' => $shippingModel->getId()]);
         }
-        
+
         return true;
     }
-    
+
     /**
      * @param string $orderId
+     *
      * @return bool
-     * @throws \Doctrine\DBAL\DBALException
      */
     private function isProcessed($orderId)
     {
         $id = Shopware()->Db()->fetchOne('SELECT id FROM s_order_attributes WHERE hm_order_id = ?', [$orderId]);
-        
+
         return !empty($id);
     }
-    
+
     /**
      * @return string
+     * @throws \Zend_Db_Adapter_Exception
      */
     private function getOrderId()
     {
         $number = Shopware()->Db()->fetchOne("/*NO LIMIT*/ SELECT number FROM s_order_number WHERE name='invoice' FOR UPDATE");
         $number++;
-        
+
         Shopware()->Db()->executeUpdate("UPDATE s_order_number SET number = number + 1 WHERE name='invoice'");
         Shopware()->Db()->query('INSERT INTO s_order (ordernumber) VALUES (?)', [$number]);
-        
+
         return Shopware()->Db()->fetchOne('SELECT id FROM s_order WHERE ordernumber = ?', [$number]);
     }
-    
+
     /**
      * returns sw customer
      *
-     * @param $email
+     * @param                 $email
      * @param AddressTransfer $billing
      * @param AddressTransfer $shipping
+     *
      * @return Customer
-     * @throws TransactionRequiredException
-     * @throws OptimisticLockException
-     * @throws ORMInvalidArgumentException
      * @throws Exception
-     * @throws ORMException
      */
     private function getCustomer($email, AddressTransfer $billing, AddressTransfer $shipping)
     {
@@ -245,7 +234,7 @@ class Ordering
         $customer->setSalutation($billing->gender === 'female' ? 'ms' : 'mr');
         $customer->setFirstname($billing->first_name ?: '');
         $customer->setLastname($billing->last_name ?: '');
-        
+
         $billAddress = new Address();
         $billAddress->setSalutation($billing->gender === 'female' ? 'ms' : 'mr');
         $billAddress->setCountry(
@@ -259,7 +248,7 @@ class Ordering
         $billAddress->setCity($billing->city ?: '');
         $billAddress->setPhone($billing->phone ?: '000 000 000');
         $billAddress->setAdditionalAddressLine1($billing->additional_field ?: '');
-        
+
         $shipAddress = new Address();
         $shipAddress->setSalutation($shipping->gender === 'female' ? 'ms' : 'mr');
         $shipAddress->setCountry(
@@ -273,24 +262,23 @@ class Ordering
         $shipAddress->setCity($shipping->city ?: '');
         $shipAddress->setPhone($billing->phone ?: '000 000 000');
         $shipAddress->setAdditionalAddressLine1($shipping->additional_field ?: '');
-        
+
         // Create Customer
         $registerService = Shopware()->Container()->get('shopware_account.register_service');
-        
+
         /** @var ShopContextInterface $context */
         $context = Shopware()->Container()->get('shopware_storefront.context_service')->getShopContext();
-        
+
         /** @var \Shopware\Bundle\StoreFrontBundle\Struct\Shop $shop */
         $context = $context->getShop();
-        
+
         $registerService->register($context, $customer, $billAddress, $shipAddress);
-        
+
         return $customer;
     }
-    
+
     /**
      * @return Shop
-     * @throws ORMException
      * @throws Exception
      */
     private function getShop()
@@ -298,12 +286,13 @@ class Ordering
         if (empty($this->shop)) {
             throw new Exception('Shop is not set');
         }
-        
+
         return $this->shop;
     }
-    
+
     /**
      * @param string $iso
+     *
      * @return int
      * @throws Exception
      */
@@ -314,13 +303,12 @@ class Ordering
         if (!$country) {
             throw new Exception('Country not found');
         }
-        
+
         return $country->getId();
     }
-    
+
     /**
      * @return Dispatch
-     * @throws ORMException
      * @throws Exception
      */
     private function getDeliveryMethod()
@@ -328,13 +316,12 @@ class Ordering
         if (empty($this->deliveryMethodId)) {
             throw new Exception('Delivery method is not set');
         }
-        
+
         return Shopware()->Models()->getReference('Shopware\Models\Dispatch\Dispatch', $this->deliveryMethodId);
     }
-    
+
     /**
      * @return Payment
-     * @throws ORMException
      * @throws Exception
      */
     private function getPaymentMethod()
@@ -342,18 +329,15 @@ class Ordering
         if (empty($this->paymentMethodId)) {
             throw new Exception('Payment method is not set');
         }
-        
+
         return Shopware()->Models()->getReference('Shopware\Models\Payment\Payment', $this->paymentMethodId);
     }
-    
+
     /**
      * @param OrderUnitTransfer $hmUnit
-     * @param Order $orderModel
+     * @param Order             $orderModel
+     *
      * @return array
-     * @throws ORMInvalidArgumentException
-     * @throws ORMException
-     * @throws OptimisticLockException
-     * @throws TransactionRequiredException
      * @throws Exception
      * @throws Exception
      */
@@ -362,48 +346,48 @@ class Ordering
         if (empty($hmUnit->id_offer)) {
             throw new Exception('Id offer is not set');
         }
-        
+
         $articleIds = Shopware()->Db()->fetchRow(
             'SELECT a.id, ad.id AS detailId FROM s_articles a, s_articles_details ad WHERE a.id = ad.articleID AND ad.ordernumber = ?',
             [$hmUnit->id_offer]
         );
-        
+
         if (empty($articleIds)) {
             throw new Exception(sprintf('Article %s not found', $hmUnit->id_offer));
         }
-        
+
         $articleId = $articleIds['id'];
         $articleDetailId = $articleIds['detailId'];
-        
+
         /** @var Article $articleModel */
         $articleModel = Shopware()->Models()->find('Shopware\Models\Article\Article', $articleId);
-        
+
         /** @var ArticleDetail $articleDetailModel */
         $articleDetailModel = Shopware()->Models()->find('Shopware\Models\Article\Detail', $articleDetailId);
-        
+
         $taxModel = $articleModel->getTax();
-        
+
         $tax = $taxModel->getTax();
-        
+
         $orderDetailModel = new OrderDetail();
         $orderDetailModel->setTax($taxModel);
         $orderDetailModel->setTaxRate($taxModel->getTax());
-        
+
         $orderDetailModel->setEsdArticle(0);
-        
+
         /** @var DetailStatus $detailStatusModel */
         $detailStatusModel = Shopware()->Models()->find('Shopware\Models\Order\DetailStatus', 0);
         $orderDetailModel->setStatus($detailStatusModel);
-        
+
         if (is_object($articleDetailModel->getUnit())) {
             $unitName = $articleDetailModel->getUnit()->getName();
         } else {
             $unitName = 0;
         }
-        
+
         $price = $hmUnit->price;
         $priceNet = $price * 100 / (100 + $tax);
-        
+
         $orderDetailModel->setArticleId($articleModel->getId());
         $orderDetailModel->setArticleName($articleModel->getName());
         $orderDetailModel->setArticleNumber($articleDetailModel->getNumber());
@@ -413,10 +397,10 @@ class Ordering
         $orderDetailModel->setShipped(0);
         $orderDetailModel->setUnit($unitName);
         $orderDetailModel->setPackUnit($articleDetailModel->getPackUnit());
-        
+
         $orderDetailModel->setNumber($orderModel->getNumber());
         $orderDetailModel->setOrder($orderModel);
-        
+
         $orderDetailAttributeModel = new \Shopware\Models\Attribute\OrderDetail();
         $orderDetailAttributeModel->setAttribute1('');
         $orderDetailAttributeModel->setAttribute2('');
@@ -426,16 +410,14 @@ class Ordering
         $orderDetailAttributeModel->setAttribute6('');
         $orderDetailAttributeModel->setHmOrderUnitId($hmUnit->id_order_unit ?: '');
         $orderDetailModel->setAttribute($orderDetailAttributeModel);
-        
+
         return [$orderDetailModel, $price, $priceNet];
     }
-    
+
     /**
      * @param CustomerBilling $billingCustomerModel
+     *
      * @return OrderBilling
-     * @throws ORMException
-     * @throws OptimisticLockException
-     * @throws TransactionRequiredException
      */
     private function createBillingAddress(CustomerBilling $billingCustomerModel)
     {
@@ -443,9 +425,9 @@ class Ordering
         $billingOrderModel->setCity($billingCustomerModel->getCity());
         $billingOrderModel->setStreet($billingCustomerModel->getStreet());
         $billingOrderModel->setSalutation($billingCustomerModel->getSalutation());
-        $billingOrderModel->setZipCode($billingCustomerModel->getZipCode());
-        $billingOrderModel->setFirstName($billingCustomerModel->getFirstName());
-        $billingOrderModel->setLastName($billingCustomerModel->getLastName());
+        $billingOrderModel->setZipCode($billingCustomerModel->getZipcode());
+        $billingOrderModel->setFirstName($billingCustomerModel->getFirstname());
+        $billingOrderModel->setLastName($billingCustomerModel->getLastname());
         $billingOrderModel->setAdditionalAddressLine1($billingCustomerModel->getAdditionalAddressLine1());
         $billingOrderModel->setAdditionalAddressLine2($billingCustomerModel->getAdditionalAddressLine2());
         $billingOrderModel->setVatId($billingCustomerModel->getVatId());
@@ -453,24 +435,22 @@ class Ordering
         $billingOrderModel->setCompany($billingCustomerModel->getCompany());
         $billingOrderModel->setDepartment("");
         $billingOrderModel->setCustomer($billingCustomerModel->getCustomer());
-        
+
         if ($billingCustomerModel->getCountry()) {
             $billingOrderModel->setCountry($billingCustomerModel->getCountry());
         }
-        
+
         if ($billingCustomerModel->getState()) {
             $billingOrderModel->setState($billingCustomerModel->getState());
         }
-        
+
         return $billingOrderModel;
     }
-    
+
     /**
      * @param CustomerShipping $addressHolderModel
+     *
      * @return OrderShipping
-     * @throws ORMException
-     * @throws OptimisticLockException
-     * @throws TransactionRequiredException
      */
     private function createShippingAddress(CustomerShipping $addressHolderModel)
     {
@@ -478,49 +458,29 @@ class Ordering
         $shippingOrderModel->setCity($addressHolderModel->getCity());
         $shippingOrderModel->setStreet($addressHolderModel->getStreet());
         $shippingOrderModel->setSalutation($addressHolderModel->getSalutation());
-        $shippingOrderModel->setZipCode($addressHolderModel->getZipCode());
-        $shippingOrderModel->setFirstName($addressHolderModel->getFirstName());
-        $shippingOrderModel->setLastName($addressHolderModel->getLastName());
+        $shippingOrderModel->setZipCode($addressHolderModel->getZipcode());
+        $shippingOrderModel->setFirstName($addressHolderModel->getFirstname());
+        $shippingOrderModel->setLastName($addressHolderModel->getLastname());
         $shippingOrderModel->setAdditionalAddressLine1($addressHolderModel->getAdditionalAddressLine1());
         $shippingOrderModel->setAdditionalAddressLine2($addressHolderModel->getAdditionalAddressLine2());
         $shippingOrderModel->setCompany($addressHolderModel->getCompany());
-        $shippingOrderModel->setDepartment("");
+        $shippingOrderModel->setDepartment('');
         $shippingOrderModel->setCustomer($addressHolderModel->getCustomer());
-        
+
         if ($addressHolderModel->getCountry()) {
             $shippingOrderModel->setCountry($addressHolderModel->getCountry());
         }
-        
+
         if ($addressHolderModel->getState()) {
             $shippingOrderModel->setState($addressHolderModel->getState());
         }
-        
+
         return $shippingOrderModel;
     }
-    
-    /**
-     * @param Order $orderModel
-     * @return array
-     *
-     * /*private function preparePaymentInstance(Order $orderModel)
-     * {
-     * $paymentInstanceModel = new PaymentInstance();
-     * $paymentInstanceModel->setPaymentMean($orderModel->getPayment());
-     * $paymentInstanceModel->setOrder($orderModel);
-     * $paymentInstanceModel->setCreatedAt($orderModel->getOrderTime());
-     * $paymentInstanceModel->setCustomer($orderModel->getCustomer());
-     * $paymentInstanceModel->setFirstName($orderModel->getBilling()->getFirstName());
-     * $paymentInstanceModel->setLastName($orderModel->getBilling()->getLastName());
-     * $paymentInstanceModel->setAddress($orderModel->getBilling()->getStreet());
-     * $paymentInstanceModel->setZipCode($orderModel->getBilling()->getZipCode());
-     * $paymentInstanceModel->setCity($orderModel->getBilling()->getCity());
-     * $paymentInstanceModel->setAmount($orderModel->getInvoiceAmount());
-     *
-     * return (array)$paymentInstanceModel;
-     * }*/
-    
+
     /**
      * @param $hmOrderUnitId
+     *
      * @return bool
      * @throws Exception
      */
@@ -533,26 +493,26 @@ class Ordering
         if (empty($ids)) {
             return false;
         }
-        
+
         $hmOrderUnit = $this->apiClient->orderUnits()->get($hmOrderUnitId);
-        if (Constants::STATUS_CANCELLED != $hmOrderUnit->status) {
+        if (Constants::STATUS_CANCELLED !== $hmOrderUnit->status) {
             return false;
         }
-        
+
         Shopware()->Db()->executeUpdate('UPDATE s_order_details_attributes SET hm_status = ? WHERE detailID = ?', ['canceled', $ids['id']]);
         Shopware()->Db()->executeUpdate('UPDATE s_order_details SET status = ? WHERE id = ?', [2, $ids['id']]);
-        
+
         // More items?
         $count = (int)Shopware()->Db()->fetchOne(
             'SELECT COUNT(d.id) FROM s_order_details d, s_order_details_attributes a WHERE a.detailID = d.id AND a.hm_status != ? AND d.orderID = ?',
             ['canceled', $ids['orderID']]
         );
-        
+
         // Cancel whole order
-        if (0 == $count) {
+        if (0 === $count) {
             Shopware()->Db()->executeUpdate('UPDATE s_order SET status = ? WHERE id = ?', [4, $ids['orderID']]);
         }
-        
+
         return true;
     }
 }
